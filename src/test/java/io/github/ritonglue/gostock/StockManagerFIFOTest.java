@@ -587,4 +587,50 @@ public class StockManagerFIFOTest {
 		buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(d, buy);
 	}
+
+	/**
+	 * https://www.l-expert-comptable.com/a/531806-la-valorisation-des-stocks-par-cout-le-moyen-pondere-ou-la-methode-fifo.html
+	 */
+	@Test
+	public void testSimple2buy1OneSell() {
+		int id = 1;
+		List<Trade> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		SourceTest b = new SourceTest(id++);
+		SourceTest c = new SourceTest(id++);
+		list.add(Trade.buy(createQuantity(150), createMoney(150*100), a));
+		list.add(Trade.buy(createQuantity(200), createMoney(200*150), b));
+		list.add(Trade.sell(createQuantity(250), c));
+		StockManager manager = newStockManager();
+		PositionLines result = manager.process(list);
+		List<Position> opened = result.getOpenedPositions();
+		List<Position> closed = result.getClosedPositions();
+		Assert.assertEquals(1, opened.size());
+		Assert.assertEquals(2, closed.size());
+
+		Position position = closed.get(0);
+		Assert.assertTrue(position.isClosed());
+		Assert.assertEquals(createQuantity(150), position.getQuantity());
+		Assert.assertEquals(createMoney(150*100), position.getAmount());
+		SourceTest buy = position.getBuy(SourceTest.class);
+		Assert.assertEquals(a, buy);
+		SourceTest sell = position.getSell(SourceTest.class);
+		Assert.assertEquals(c, sell);
+
+		position = closed.get(1);
+		Assert.assertTrue(position.isClosed());
+		Assert.assertEquals(createQuantity(100), position.getQuantity());
+		Assert.assertEquals(createMoney(100*150), position.getAmount());
+		buy = position.getBuy(SourceTest.class);
+		Assert.assertEquals(b, buy);
+		sell = position.getSell(SourceTest.class);
+		Assert.assertEquals(c, sell);
+
+		position = opened.get(0);
+		Assert.assertTrue(position.isOpened());
+		Assert.assertEquals(createQuantity(100), position.getQuantity());
+		Assert.assertEquals(createMoney(100*150), position.getAmount());
+		buy = position.getBuy(SourceTest.class);
+		Assert.assertEquals(b, buy);
+	}
 }
