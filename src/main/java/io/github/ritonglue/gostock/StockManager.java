@@ -168,6 +168,50 @@ public class StockManager {
 		private final Object source;
 		private final List<Trade> buyValues;
 		
+		public static class Builder {
+			private BigDecimal quantity;
+			private MonetaryAmount amount;
+			private MonetaryAmount unitAmount;
+			private TradeType tradeType;
+			private Object source;
+
+			public Builder quantity(BigDecimal quantity) {this.quantity = quantity; return this;}
+			public Builder amount(MonetaryAmount amount) {this.amount = amount; return this;}
+			public Builder tradeType(TradeType tradeType) {this.tradeType = tradeType; return this;}
+			public Builder source(Object source) {this.source = source; return this;}
+			public Builder unitAmount(MonetaryAmount unitAmount) {this.unitAmount = unitAmount; return this;}
+
+			public Trade build() {
+				if(unitAmount != null && amount == null && quantity != null) {
+					amount = unitAmount.multiply(quantity);
+				}
+				List<Trade> buyValues = null;
+				switch(tradeType) {
+					case BUY:
+						buyValues = Collections.emptyList();
+						quantity = quantity.abs();
+						break;
+					case SELL:
+						buyValues = new ArrayList<>();
+						quantity = quantity.abs();
+						amount = null;
+						break;
+					case MODIFICATION:
+						buyValues = Collections.emptyList();
+						if(quantity == null) quantity = BigDecimal.ONE;
+						amount = amount.divide(quantity);
+						quantity = BigDecimal.ONE;
+						source = null;
+						break;
+				}
+				return new Trade(quantity, amount, tradeType, source, buyValues);
+			}
+		}
+
+		public static Builder tradeType(TradeType tradeType) {
+			return new Builder().tradeType(tradeType);
+		}
+
 		private Trade(BigDecimal quantity, MonetaryAmount amount, TradeType tradeType, Object source, List<Trade> buyValues) {
 			this.quantity = quantity;
 			this.amount = amount;
@@ -177,11 +221,11 @@ public class StockManager {
 		}
 		
 		public static Trade buy(BigDecimal quantity, MonetaryAmount amount, Object source) {
-			return new Trade(quantity.abs(), amount, TradeType.BUY, source, Collections.emptyList());
+			return tradeType(TradeType.BUY).amount(amount).quantity(quantity).source(source).build();
 		}
 
 		public static Trade sell(BigDecimal quantity, Object source) {
-			return new Trade(quantity.abs(), null, TradeType.SELL, source, new ArrayList<>());
+			return tradeType(TradeType.SELL).quantity(quantity).source(source).build();
 		}
 
 		public static Trade modification(BigDecimal quantity, MonetaryAmount amount) {
@@ -194,7 +238,7 @@ public class StockManager {
 		 * @return
 		 */
 		public static Trade modification(MonetaryAmount amountUnit) {
-			return new Trade(BigDecimal.ONE, amountUnit, TradeType.MODIFICATION, null, Collections.emptyList());
+			return tradeType(TradeType.MODIFICATION).amount(amountUnit).quantity(BigDecimal.ONE).build();
 		}
 
 		public BigDecimal getQuantity() {
