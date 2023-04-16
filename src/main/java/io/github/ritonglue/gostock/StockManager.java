@@ -14,6 +14,7 @@ import javax.money.MonetaryAmountFactory;
 
 import io.github.ritonglue.gostock.strategy.FIFOStrategy;
 import io.github.ritonglue.gostock.strategy.LIFOStrategy;
+import io.github.ritonglue.gostock.strategy.PRMPStrategy;
 import io.github.ritonglue.gostock.strategy.Strategy;
 
 public class StockManager {
@@ -65,6 +66,9 @@ public class StockManager {
 			break;
 		case LIFO:
 			strategy = new LIFOStrategy();
+			break;
+		case PRMP:
+			strategy = new PRMPStrategy();
 			break;
 		default:
 			throw new AssertionError();
