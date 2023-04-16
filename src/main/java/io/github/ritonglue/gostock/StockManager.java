@@ -93,7 +93,8 @@ public class StockManager {
 			case MODIFICATION:
 				MonetaryAmount amount = t.getAmount();
 				for(Trade tmp : strategy) {
-					tmp.setAmount(tmp.getAmount().add(amount));
+					MonetaryAmount delta = amount.multiply(tmp.getQuantity());
+					tmp.setAmount(tmp.getAmount().add(delta));
 				}
 				break;
 			}
