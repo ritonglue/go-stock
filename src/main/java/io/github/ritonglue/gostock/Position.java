@@ -12,16 +12,18 @@ public class Position implements Serializable {
 	private final Object sell;
 	private final BigDecimal quantity;
 	private final MonetaryAmount amount;
+	private final CloseCause closeCause;
 
 	Position(Object buy, BigDecimal quantity, MonetaryAmount amount) {
-		this(buy, null, quantity, amount);
+		this(buy, null, quantity, amount, null);
 	}
 
-	Position(Object buy, Object sell, BigDecimal quantity, MonetaryAmount amount) {
+	Position(Object buy, Object sell, BigDecimal quantity, MonetaryAmount amount, CloseCause closeCause) {
 		this.buy = buy;
 		this.sell = sell;
 		this.quantity = quantity;
 		this.amount = amount;
+		this.closeCause = closeCause;
 	}
 
 	public Object getBuy() {
@@ -59,5 +61,9 @@ public class Position implements Serializable {
 	@Override
 	public String toString() {
 		return String.format("Position [quantity=%s, amount=%s, buy=%s, sell=%s]", quantity, amount, buy, sell);
+	}
+
+	public CloseCause getCloseCause() {
+		return closeCause;
 	}
 }
