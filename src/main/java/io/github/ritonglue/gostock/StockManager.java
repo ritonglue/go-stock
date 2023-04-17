@@ -98,10 +98,27 @@ public class StockManager {
 			case MODIFICATION:
 				modification(t, strategy);
 				break;
+			case RBT:
+				reimbursement(t, context);
+				break;
 			}
 		}
 		createOpenPosition(context);
 		return context.getLines();
+	}
+
+	private void reimbursement(Trade trade, Context context) {
+		Strategy strategy = context.getStrategy();
+		if(trade.getTradeType() != TradeType.RBT) return;
+		BigDecimal quantity = trade.getQuantity();
+		if(quantity == null) {
+			quantity = BigDecimal.ZERO;
+			for(Trade t : strategy) {
+				quantity = quantity.add(t.getQuantity());
+			}
+			trade.setQuantity(quantity);
+		}
+		sell(trade, context);
 	}
 
 	private void modification(Trade t, Strategy strategy) {
@@ -132,7 +149,17 @@ public class StockManager {
 	}
 
 	private void sell(Trade sell, Context context) {
-		if(sell.getTradeType() != TradeType.SELL) return;
+		CloseCause closeCause = null;
+		switch(sell.getTradeType()) {
+		case SELL:
+			closeCause = CloseCause.SELL;
+			break;
+		case RBT:
+			closeCause = CloseCause.RBT;
+			break;
+		default:
+			return;
+		}
 		Strategy strategy = context.getStrategy();
 		if(strategy.isEmpty()) return;
 
@@ -146,6 +173,8 @@ public class StockManager {
 		final BigDecimal stockQuantity = buy.getQuantity();
 		final MonetaryAmount stockAmount = buy.getAmount();
 		CurrencyUnit currency = stockAmount.getCurrency();
+		Object sellSource = sell.getSource();
+		Object buySource = buy.getSource();
 		if(sell.getAmount() == null) {
 			//set to zero
 			sell.setAmount(factory.setCurrency(currency).setNumber(BigDecimal.ZERO).create());
@@ -157,7 +186,7 @@ public class StockManager {
 			buy.setAmount(factory.setCurrency(currency).setNumber(BigDecimal.ZERO).create());
 			sell.setAmount(sell.getAmount().add(stockAmount));
 			sell.setQuantity(sell.getQuantity().subtract(stockQuantity));
-			Position position = new Position(buy.getSource(), sell.getSource(), stockQuantity, stockAmount);
+			Position position = new Position(buySource, sellSource, stockQuantity, stockAmount, closeCause);
 			closedPositions.add(position);
 			strategy.remove();
 			if(nsign < 0) {
@@ -177,7 +206,7 @@ public class StockManager {
 			buy.setAmount(stockAmount.subtract(m));
 			sell.setAmount(sell.getAmount().add(m));
 			sell.setQuantity(BigDecimal.ZERO);
-			Position position = new Position(buy.getSource(), sell.getSource(), sellQuantity, m);
+			Position position = new Position(buySource, sellSource, sellQuantity, m, closeCause);
 			closedPositions.add(position);
 		}
 		sell.addBuyValues(buy);
@@ -227,10 +256,19 @@ public class StockManager {
 						break;
 					case MODIFICATION:
 						buyValues = Collections.emptyList();
-						if(quantity == null) quantity = BigDecimal.ONE;
-						amount = amount.divide(quantity);
-						quantity = BigDecimal.ONE;
+						if(quantity != null) {
+							//unitAmount
+							amount = amount.divide(quantity);
+							quantity = BigDecimal.ONE;
+						}
 						source = null;
+						break;
+					case RBT:
+						buyValues = new ArrayList<>();
+						if(quantity != null) {
+							quantity = quantity.abs();
+						}
+						amount = null;
 						break;
 				}
 				return new Trade(quantity, amount, tradeType, source, buyValues);
@@ -277,6 +315,14 @@ public class StockManager {
 		 */
 		public static Trade modificationSingleLine(MonetaryAmount amount) {
 			return tradeType(TradeType.MODIFICATION).amount(amount).build();
+		}
+
+		public static Trade reimbursement(BigDecimal quantity, Object source) {
+			return tradeType(TradeType.RBT).quantity(quantity).source(source).build();
+		}
+
+		public static Trade reimbursement(Object source) {
+			return reimbursement(null, source);
 		}
 
 		public BigDecimal getQuantity() {
