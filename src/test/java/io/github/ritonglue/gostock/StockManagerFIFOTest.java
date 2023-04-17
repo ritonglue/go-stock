@@ -102,6 +102,10 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(a, buy);
 		SourceTest sell = position.getSell(SourceTest.class);
 		Assert.assertEquals(b, sell);
+
+		List<Trade> buyValues = list.get(1).getBuyValues();
+		Assert.assertEquals(1, buyValues.size());
+		Assert.assertEquals(a, buyValues.get(0).getSource());
 	}
 
 	@Test
@@ -137,6 +141,10 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(a, buy);
 		SourceTest sell = position.getSell(SourceTest.class);
 		Assert.assertEquals(b, sell);
+
+		List<Trade> buyValues = list.get(1).getBuyValues();
+		Assert.assertEquals(1, buyValues.size());
+		Assert.assertEquals(a, buyValues.get(0).getSource());
 	}
 
 	@Test
@@ -176,6 +184,14 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(a, buy);
 		sell = position.getSell(SourceTest.class);
 		Assert.assertEquals(c, sell);
+
+		List<Trade> buyValues = list.get(1).getBuyValues();
+		Assert.assertEquals(1, buyValues.size());
+		Assert.assertEquals(a, buyValues.get(0).getSource());
+
+		buyValues = list.get(2).getBuyValues();
+		Assert.assertEquals(1, buyValues.size());
+		Assert.assertEquals(a, buyValues.get(0).getSource());
 	}
 
 	@Test
@@ -219,6 +235,11 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(position.getAmount(), createMoney("3.88"));
 		buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(b, buy);
+
+		List<Trade> buyValues = list.get(2).getBuyValues();
+		Assert.assertEquals(2, buyValues.size());
+		Assert.assertEquals(b, buyValues.get(0).getSource());
+		Assert.assertEquals(a, buyValues.get(1).getSource());
 	}
 
 	@Test
@@ -275,6 +296,15 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(position.getAmount(), createMoney(200));
 		buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(d, buy);
+
+		List<Trade> buyValues = list.get(2).getBuyValues();
+		Assert.assertEquals(2, buyValues.size());
+		Assert.assertEquals(b, buyValues.get(0).getSource());
+		Assert.assertEquals(a, buyValues.get(1).getSource());
+
+		buyValues = list.get(4).getBuyValues();
+		Assert.assertEquals(1, buyValues.size());
+		Assert.assertEquals(b, buyValues.get(0).getSource());
 	}
 
 	@Test
@@ -349,6 +379,16 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(position.getAmount(), createMoney("33.33"));
 		buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(f, buy);
+
+		List<Trade> buyValues = list.get(2).getBuyValues();
+		Assert.assertEquals(2, buyValues.size());
+		Assert.assertEquals(b, buyValues.get(0).getSource());
+		Assert.assertEquals(a, buyValues.get(1).getSource());
+
+		buyValues = list.get(4).getBuyValues();
+		Assert.assertEquals(2, buyValues.size());
+		Assert.assertEquals(d, buyValues.get(0).getSource());
+		Assert.assertEquals(b, buyValues.get(1).getSource());
 	}
 
 	@Test
@@ -632,5 +672,162 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(createMoney(100*150), position.getAmount());
 		buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(b, buy);
+	}
+
+	@Test
+	public void testSimpleRbt() {
+		int id = 1;
+		List<Trade> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		SourceTest b = new SourceTest(id++);
+		list.add(Trade.buy(createQuantity(7), createMoney(100), a));
+		list.add(Trade.reimbursement(createQuantity(7), b));
+		StockManager manager = newStockManager();
+		PositionLines result = manager.process(list);
+		List<Position> openedPositions = result.getOpenedPositions();
+		List<Position> closedPositions = result.getClosedPositions();
+		Assert.assertTrue(openedPositions.isEmpty());
+		Assert.assertEquals(1, closedPositions.size());
+		Position position = closedPositions.get(0);
+		Assert.assertEquals(createQuantity(7), position.getQuantity());
+		Assert.assertEquals(createMoney(100), position.getAmount());
+		Assert.assertTrue(position.isClosed());
+		Assert.assertEquals(CloseCause.RBT, position.getCloseCause());
+		SourceTest buy = position.getBuy(SourceTest.class);
+		Assert.assertEquals(a, buy);
+
+		List<Trade> buyValues = list.get(1).getBuyValues();
+		Assert.assertEquals(1, buyValues.size());
+		Assert.assertEquals(a, buyValues.get(0).getSource());
+	}
+
+	@Test
+	public void testSimpleRbtNullQuantity() {
+		int id = 1;
+		List<Trade> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		SourceTest b = new SourceTest(id++);
+		list.add(Trade.buy(createQuantity(7), createMoney(100), a));
+		list.add(Trade.reimbursement(b));
+		StockManager manager = newStockManager();
+		PositionLines result = manager.process(list);
+		List<Position> openedPositions = result.getOpenedPositions();
+		List<Position> closedPositions = result.getClosedPositions();
+		Assert.assertTrue(openedPositions.isEmpty());
+		Assert.assertEquals(1, closedPositions.size());
+		Position position = closedPositions.get(0);
+		Assert.assertEquals(createQuantity(7), position.getQuantity());
+		Assert.assertEquals(createMoney(100), position.getAmount());
+		Assert.assertTrue(position.isClosed());
+		Assert.assertEquals(CloseCause.RBT, position.getCloseCause());
+		SourceTest buy = position.getBuy(SourceTest.class);
+		SourceTest sell = position.getSell(SourceTest.class);
+		Assert.assertEquals(a, buy);
+		Assert.assertEquals(b, sell);
+
+		List<Trade> buyValues = list.get(1).getBuyValues();
+		Assert.assertEquals(1, buyValues.size());
+		Assert.assertEquals(a, buyValues.get(0).getSource());
+	}
+
+	@Test
+	public void testBuySellRbt() {
+		int id = 1;
+		List<Trade> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		SourceTest b = new SourceTest(id++);
+		SourceTest c = new SourceTest(id++);
+		list.add(Trade.buy(createQuantity(7), createMoney(100), a));
+		list.add(Trade.sell(createQuantity(3), b));
+		list.add(Trade.reimbursement(c));
+		StockManager manager = newStockManager();
+		PositionLines result = manager.process(list);
+		List<Position> openedPositions = result.getOpenedPositions();
+		List<Position> closedPositions = result.getClosedPositions();
+		Assert.assertTrue(openedPositions.isEmpty());
+		Assert.assertEquals(2, closedPositions.size());
+
+		Position position = closedPositions.get(0);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney("42.86"), position.getAmount());
+		Assert.assertTrue(position.isClosed());
+		Assert.assertEquals(CloseCause.SELL, position.getCloseCause());
+		SourceTest buy = position.getBuy(SourceTest.class);
+		SourceTest sell = position.getSell(SourceTest.class);
+		Assert.assertEquals(a, buy);
+		Assert.assertEquals(b, sell);
+
+		position = closedPositions.get(1);
+		Assert.assertEquals(createQuantity(4), position.getQuantity());
+		Assert.assertEquals(createMoney("57.14"), position.getAmount());
+		Assert.assertTrue(position.isClosed());
+		Assert.assertEquals(CloseCause.RBT, position.getCloseCause());
+		buy = position.getBuy(SourceTest.class);
+		sell = position.getSell(SourceTest.class);
+		Assert.assertEquals(a, buy);
+		Assert.assertEquals(c, sell);
+
+		List<Trade> buyValues = list.get(1).getBuyValues();
+		Assert.assertEquals(1, buyValues.size());
+		Assert.assertEquals(a, buyValues.get(0).getSource());
+	}
+
+	@Test
+	public void testBuySellBuyRbt() {
+		int id = 1;
+		List<Trade> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		SourceTest b = new SourceTest(id++);
+		SourceTest c = new SourceTest(id++);
+		SourceTest d = new SourceTest(id++);
+		list.add(Trade.buy(createQuantity(7), createMoney(100), a));
+		list.add(Trade.sell(createQuantity(3), b));
+		list.add(Trade.buy(createQuantity(3), createMoney(160), c));
+		list.add(Trade.reimbursement(d));
+		StockManager manager = newStockManager();
+		PositionLines result = manager.process(list);
+		List<Position> openedPositions = result.getOpenedPositions();
+		List<Position> closedPositions = result.getClosedPositions();
+		Assert.assertTrue(openedPositions.isEmpty());
+		Assert.assertEquals(3, closedPositions.size());
+
+		Position position = closedPositions.get(0);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney("42.86"), position.getAmount());
+		Assert.assertTrue(position.isClosed());
+		Assert.assertEquals(CloseCause.SELL, position.getCloseCause());
+		SourceTest buy = position.getBuy(SourceTest.class);
+		SourceTest sell = position.getSell(SourceTest.class);
+		Assert.assertEquals(a, buy);
+		Assert.assertEquals(b, sell);
+
+		position = closedPositions.get(1);
+		Assert.assertEquals(createQuantity(4), position.getQuantity());
+		Assert.assertEquals(createMoney("57.14"), position.getAmount());
+		Assert.assertTrue(position.isClosed());
+		Assert.assertEquals(CloseCause.RBT, position.getCloseCause());
+		buy = position.getBuy(SourceTest.class);
+		sell = position.getSell(SourceTest.class);
+		Assert.assertEquals(a, buy);
+		Assert.assertEquals(d, sell);
+
+		position = closedPositions.get(2);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney(160), position.getAmount());
+		Assert.assertTrue(position.isClosed());
+		Assert.assertEquals(CloseCause.RBT, position.getCloseCause());
+		buy = position.getBuy(SourceTest.class);
+		sell = position.getSell(SourceTest.class);
+		Assert.assertEquals(c, buy);
+		Assert.assertEquals(d, sell);
+
+		List<Trade> buyValues = list.get(1).getBuyValues();
+		Assert.assertEquals(1, buyValues.size());
+		Assert.assertEquals(a, buyValues.get(0).getSource());
+
+		buyValues = list.get(3).getBuyValues();
+		Assert.assertEquals(2, buyValues.size());
+		Assert.assertEquals(c, buyValues.get(0).getSource());
+		Assert.assertEquals(a, buyValues.get(1).getSource());
 	}
 }
