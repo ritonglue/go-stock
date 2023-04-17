@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -58,7 +59,7 @@ public class StockManager {
 		}
 	}
 
-	private Context getContext() {
+	private Context newContext() {
 		Strategy strategy = null;
 		switch(mode) {
 		case FIFO:
@@ -82,7 +83,7 @@ public class StockManager {
 	 * @return
 	 */
 	public PositionLines process(Iterable<Trade> trades) {
-		Context context = this.getContext();
+		Context context = this.newContext();
 		Strategy strategy = context.getStrategy();
 		for(Trade t : trades) {
 			if(t == null) continue;
@@ -95,16 +96,39 @@ public class StockManager {
 				sell(t, context);
 				break;
 			case MODIFICATION:
-				MonetaryAmount amount = t.getAmount();
-				for(Trade tmp : strategy) {
-					MonetaryAmount delta = amount.multiply(tmp.getQuantity());
-					tmp.setAmount(tmp.getAmount().add(delta));
-				}
+				modification(t, strategy);
 				break;
 			}
 		}
 		createOpenPosition(context);
 		return context.getLines();
+	}
+
+	private void modification(Trade t, Strategy strategy) {
+		if(t.getTradeType() != TradeType.MODIFICATION) return;
+		MonetaryAmount amount = t.getAmount();
+		BigDecimal quantity = t.getQuantity();
+		if(quantity == null) {
+			//quantity not provided : assume strategy as size 1
+			Iterator<Trade> iterator = strategy.iterator();
+			if(iterator.hasNext()) {
+				Trade tmp = iterator.next();
+				if(iterator.hasNext()) {
+					throw new IllegalArgumentException("modification: quantity null");
+				}
+				tmp.setAmount(tmp.getAmount().add(amount));
+			}
+		} else {
+			//amount must be a unit amount
+			if(BigDecimal.ONE.compareTo(quantity) != 0) {
+				throw new IllegalArgumentException("modification: quantity must be one");
+			}
+			//apply amount to the stock
+			for(Trade tmp : strategy) {
+				MonetaryAmount delta = amount.multiply(tmp.getQuantity());
+				tmp.setAmount(tmp.getAmount().add(delta));
+			}
+		}
 	}
 
 	private void sell(Trade sell, Context context) {
@@ -175,6 +199,11 @@ public class StockManager {
 			private TradeType tradeType;
 			private Object source;
 
+			/**
+			 * Can be null for MODIFICATION. In this case, there must be a single line in stock
+			 * @param quantity
+			 * @return
+			 */
 			public Builder quantity(BigDecimal quantity) {this.quantity = quantity; return this;}
 			public Builder amount(MonetaryAmount amount) {this.amount = amount; return this;}
 			public Builder tradeType(TradeType tradeType) {this.tradeType = tradeType; return this;}
@@ -234,11 +263,20 @@ public class StockManager {
 
 		/**
 		 * build a modification trade unit
-		 * @param amountUnit can be negative or positive
+		 * @param amountUnit. Amount for a unit quantity. Can be negative or positive
 		 * @return
 		 */
 		public static Trade modification(MonetaryAmount amountUnit) {
 			return tradeType(TradeType.MODIFICATION).amount(amountUnit).quantity(BigDecimal.ONE).build();
+		}
+
+		/**
+		 * build a modification trade unit assuming a single line in stock
+		 * @param amount to be applied to the whole stock. Can be negative or positive
+		 * @return
+		 */
+		public static Trade modificationSingleLine(MonetaryAmount amount) {
+			return tradeType(TradeType.MODIFICATION).amount(amount).build();
 		}
 
 		public BigDecimal getQuantity() {
