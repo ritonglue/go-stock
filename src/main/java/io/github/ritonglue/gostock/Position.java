@@ -55,4 +55,9 @@ public class Position implements Serializable {
 	public boolean isClosed() {
 		return !isOpened();
 	}
+
+	@Override
+	public String toString() {
+		return String.format("Position [quantity=%s, amount=%s, buy=%s, sell=%s]", quantity, amount, buy, sell);
+	}
 }
