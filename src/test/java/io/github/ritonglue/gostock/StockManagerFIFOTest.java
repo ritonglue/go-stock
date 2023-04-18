@@ -830,4 +830,38 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(c, buyValues.get(0).getSource());
 		Assert.assertEquals(a, buyValues.get(1).getSource());
 	}
+
+	@Test
+	public void testModification2() {
+		int id = 1;
+		List<Trade> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		SourceTest b = new SourceTest(id++);
+		list.add(Trade.buy(createQuantity(8), createMoney(100), a));
+		list.add(Trade.buy(createQuantity(3), createMoney(160), b));
+		list.add(Trade.modification(createMoney(-50)));
+		StockManager manager = newStockManager();
+		PositionLines result = manager.process(list);
+		List<Position> openedPositions = result.getOpenedPositions();
+		List<Position> closedPositions = result.getClosedPositions();
+		Assert.assertTrue(closedPositions.isEmpty());
+		Assert.assertEquals(2, openedPositions.size());
+		Assert.assertEquals(createMoney(210)
+			, openedPositions.stream().map(o -> o.getAmount())
+			.reduce(createMoney(0), MonetaryAmount::add));
+
+		Position position = openedPositions.get(0);
+		Assert.assertEquals(createQuantity(8), position.getQuantity());
+		Assert.assertEquals(createMoney("63.64"), position.getAmount());
+		Assert.assertTrue(position.isOpened());
+		SourceTest buy = position.getBuy(SourceTest.class);
+		Assert.assertEquals(a, buy);
+
+		position = openedPositions.get(1);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney("146.36"), position.getAmount());
+		Assert.assertTrue(position.isOpened());
+		buy = position.getBuy(SourceTest.class);
+		Assert.assertEquals(b, buy);
+	}
 }
