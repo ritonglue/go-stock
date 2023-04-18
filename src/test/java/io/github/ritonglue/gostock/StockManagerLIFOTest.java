@@ -436,7 +436,7 @@ public class StockManagerLIFOTest {
 		MonetaryAmount amount = createMoney(100);
 		SourceTest a = new SourceTest(id++);
 		list.add(Trade.buy(quantity, amount, a));
-		list.add(Trade.modification(createMoney(-10)));//reduce by 10 every units
+		list.add(Trade.modification(createMoney(-30)));
 
 		PositionLines result = manager.process(list);
 		Assert.assertTrue(result.getClosedPositions().isEmpty());
@@ -461,7 +461,7 @@ public class StockManagerLIFOTest {
 		SourceTest b = new SourceTest(id++);
 		list.add(Trade.buy(quantity, amount, a));
 		list.add(Trade.sell(quantitySell, b));
-		list.add(Trade.modification(createMoney(-10)));//reduce by 10 every units
+		list.add(Trade.modification(createMoney(-10)));
 		StockManager manager = newStockManager();
 		PositionLines result = manager.process(list);
 		List<Position> opened = result.getOpenedPositions();
@@ -538,7 +538,7 @@ public class StockManagerLIFOTest {
 		list.add(Trade.buy(createQuantity(4), createMoney("5.17"), b));
 		list.add(Trade.buy(createQuantity(3), createMoney(100), a));
 		list.add(Trade.sell(createQuantity(4), c));//closes 3 + 1. 3 stays open
-		list.add(Trade.modification(createMoney("-0.50")));
+		list.add(Trade.modification(createMoney("-1.50")));
 		list.add(Trade.buy(createQuantity(7), createMoney(200), d));
 		list.add(Trade.sell(createQuantity(3), e)); //closes 3. 4 stays open
 		StockManager manager = newStockManager();

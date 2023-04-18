@@ -96,7 +96,7 @@ public class StockManager {
 				sell(t, context);
 				break;
 			case MODIFICATION:
-				modification(t, strategy);
+				modification(t, context);
 				break;
 			case RBT:
 				reimbursement(t, context);
@@ -121,30 +121,38 @@ public class StockManager {
 		sell(trade, context);
 	}
 
-	private void modification(Trade t, Strategy strategy) {
+	private static BigDecimal evalQuantity(Strategy strategy) {
+		Iterator<Trade> iterator = strategy.iterator();
+		Trade tmp = null;
+		if(iterator.hasNext()) tmp = iterator.next();
+		BigDecimal stockQuantity = tmp.getQuantity();
+		while(iterator.hasNext()) {
+			stockQuantity = stockQuantity.add(tmp.getQuantity());
+		}
+		return stockQuantity;
+	}
+
+	private void modification(Trade t, Context context) {
 		if(t.getTradeType() != TradeType.MODIFICATION) return;
-		MonetaryAmount amount = t.getAmount();
-		BigDecimal quantity = t.getQuantity();
-		if(quantity == null) {
-			//quantity not provided : assume strategy as size 1
-			Iterator<Trade> iterator = strategy.iterator();
-			if(iterator.hasNext()) {
-				Trade tmp = iterator.next();
-				if(iterator.hasNext()) {
-					throw new IllegalArgumentException("modification: quantity null");
-				}
-				tmp.setAmount(tmp.getAmount().add(amount));
+		Strategy strategy = context.getStrategy();
+		MonetaryAmountFactory<?> factory = context.getFactory();
+
+		BigDecimal stockQuantity = evalQuantity(strategy);
+		CurrencyUnit currency = t.getAmount().getCurrency();
+
+		for(Trade tmp : strategy) {
+			BigDecimal quantity = tmp.getQuantity();
+			MonetaryAmount amount = t.getAmount();
+			MonetaryAmount m = amount.multiply(quantity);
+			try {
+				m = m.divide(stockQuantity);
+			} catch(ArithmeticException e) {
+				double x = m.getNumber().doubleValue() / stockQuantity.doubleValue();
+				m = factory.setCurrency(currency).setNumber(x).create();
 			}
-		} else {
-			//amount must be a unit amount
-			if(BigDecimal.ONE.compareTo(quantity) != 0) {
-				throw new IllegalArgumentException("modification: quantity must be one");
-			}
-			//apply amount to the stock
-			for(Trade tmp : strategy) {
-				MonetaryAmount delta = amount.multiply(tmp.getQuantity());
-				tmp.setAmount(tmp.getAmount().add(delta));
-			}
+			tmp.setAmount(tmp.getAmount().add(m));
+			t.setAmount(amount.subtract(m));
+			stockQuantity = stockQuantity.subtract(quantity);
 		}
 	}
 
@@ -228,11 +236,6 @@ public class StockManager {
 			private TradeType tradeType;
 			private Object source;
 
-			/**
-			 * Can be null for MODIFICATION. In this case, there must be a single line in stock
-			 * @param quantity
-			 * @return
-			 */
 			public Builder quantity(BigDecimal quantity) {this.quantity = quantity; return this;}
 			public Builder amount(MonetaryAmount amount) {this.amount = amount; return this;}
 			public Builder tradeType(TradeType tradeType) {this.tradeType = tradeType; return this;}
@@ -256,11 +259,6 @@ public class StockManager {
 						break;
 					case MODIFICATION:
 						buyValues = Collections.emptyList();
-						if(quantity != null) {
-							//unitAmount
-							amount = amount.divide(quantity);
-							quantity = BigDecimal.ONE;
-						}
 						source = null;
 						break;
 					case RBT:
@@ -295,25 +293,11 @@ public class StockManager {
 			return tradeType(TradeType.SELL).quantity(quantity).source(source).build();
 		}
 
-		public static Trade modification(BigDecimal quantity, MonetaryAmount amount) {
-			return modification(amount.divide(quantity));
-		}
-
 		/**
-		 * build a modification trade unit
-		 * @param amountUnit. Amount for a unit quantity. Can be negative or positive
+		 * @param amount. Can be negative or positive
 		 * @return
 		 */
-		public static Trade modification(MonetaryAmount amountUnit) {
-			return tradeType(TradeType.MODIFICATION).amount(amountUnit).quantity(BigDecimal.ONE).build();
-		}
-
-		/**
-		 * build a modification trade unit assuming a single line in stock
-		 * @param amount to be applied to the whole stock. Can be negative or positive
-		 * @return
-		 */
-		public static Trade modificationSingleLine(MonetaryAmount amount) {
+		public static Trade modification(MonetaryAmount amount) {
 			return tradeType(TradeType.MODIFICATION).amount(amount).build();
 		}
 
