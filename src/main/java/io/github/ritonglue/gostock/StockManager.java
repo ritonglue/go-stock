@@ -12,6 +12,7 @@ import javax.money.CurrencyUnit;
 import javax.money.Monetary;
 import javax.money.MonetaryAmount;
 import javax.money.MonetaryAmountFactory;
+import javax.money.MonetaryOperator;
 
 import io.github.ritonglue.gostock.strategy.FIFOStrategy;
 import io.github.ritonglue.gostock.strategy.LIFOStrategy;
@@ -124,9 +125,13 @@ public class StockManager {
 	private static BigDecimal evalQuantity(Strategy strategy) {
 		Iterator<Trade> iterator = strategy.iterator();
 		Trade tmp = null;
-		if(iterator.hasNext()) tmp = iterator.next();
-		BigDecimal stockQuantity = tmp.getQuantity();
+		BigDecimal stockQuantity = null;
+		if(iterator.hasNext()) {
+			tmp = iterator.next();
+			stockQuantity = tmp.getQuantity();
+		}
 		while(iterator.hasNext()) {
+			tmp = iterator.next();
 			stockQuantity = stockQuantity.add(tmp.getQuantity());
 		}
 		return stockQuantity;
@@ -143,6 +148,9 @@ public class StockManager {
 		for(Trade tmp : strategy) {
 			BigDecimal quantity = tmp.getQuantity();
 			MonetaryAmount amount = t.getAmount();
+			if(tmp.getAmount().signum() < 0) {
+				throw new RuntimeException("amount is < 0: " + t.getSource());
+			}
 			MonetaryAmount m = amount.multiply(quantity);
 			try {
 				m = m.divide(stockQuantity);
@@ -150,6 +158,7 @@ public class StockManager {
 				double x = m.getNumber().doubleValue() / stockQuantity.doubleValue();
 				m = factory.setCurrency(currency).setNumber(x).create();
 			}
+			m = m.with(Monetary.getDefaultRounding());
 			tmp.setAmount(tmp.getAmount().add(m));
 			t.setAmount(amount.subtract(m));
 			stockQuantity = stockQuantity.subtract(quantity);
