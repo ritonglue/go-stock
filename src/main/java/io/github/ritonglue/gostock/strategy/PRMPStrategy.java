@@ -33,8 +33,14 @@ public final class PRMPStrategy implements Strategy {
 		return true;
 	}
 
-	private Trade getStock() {
-		return stock;
+	@Override
+	public BigDecimal getQuantity() {
+		return stock == null ? BigDecimal.ZERO : stock.getQuantity();
+	}
+
+	@Override
+	public Trade getStock() {
+		return stock == null ? Trade.buy(BigDecimal.ZERO, null, null) : stock;
 	}
 
 	@Override
