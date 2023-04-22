@@ -21,7 +21,7 @@ public final class PRMPStrategy implements Strategy {
 	}
 
 	@Override
-	public void add(Trade t) {
+	public boolean add(Trade t) {
 		if(buyValue == null) {
 			buyValue = t.getAmount();
 			buyQuantity = t.getQuantity();
@@ -33,6 +33,7 @@ public final class PRMPStrategy implements Strategy {
 			buyQuantity = stockQuantity = stockQuantity.add(t.getQuantity());
 			stock = Trade.buy(buyQuantity, buyValue, null);
 		}
+		return true;
 	}
 
 	private Trade getStock() {
@@ -56,6 +57,11 @@ public final class PRMPStrategy implements Strategy {
 	public boolean isEmpty() {
 		Trade stock = getStock();
 		return stock == null || stock.getQuantity().signum() == 0;
+	}
+
+	@Override
+	public int size() {
+		return isEmpty() ? 0 : 1;
 	}
 
 	@Override

@@ -9,8 +9,9 @@ public final class LIFOStrategy extends QueueStrategy {
 	private final Deque<Trade> stack = new ArrayDeque<>();
 
 	@Override
-	public void add(Trade t) {
+	public boolean add(Trade t) {
 		getQueue().addFirst(t);
+		return true;
 	}
 
 	@Override

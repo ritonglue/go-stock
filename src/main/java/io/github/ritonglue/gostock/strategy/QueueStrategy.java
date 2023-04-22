@@ -25,8 +25,8 @@ public abstract class QueueStrategy implements Strategy {
 	}
 
 	@Override
-	public void add(Trade t) {
-		getQueue().add(t);
+	public boolean add(Trade t) {
+		return getQueue().add(t);
 	}
 
 	@Override
@@ -37,5 +37,10 @@ public abstract class QueueStrategy implements Strategy {
 	@Override
 	public Iterator<Trade> iterator() {
 		return getQueue().iterator();
+	}
+
+	@Override
+	public int size() {
+		return getQueue().size();
 	}
 }
