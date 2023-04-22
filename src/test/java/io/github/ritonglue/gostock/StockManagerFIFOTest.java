@@ -41,7 +41,7 @@ public class StockManagerFIFOTest {
 		return factory.setCurrency(cu).setNumber(value).create();
 	}
 
-	static BigDecimal createQuantity(String value) {
+	public static BigDecimal createQuantity(String value) {
 		return new BigDecimal(value);
 	}
 
