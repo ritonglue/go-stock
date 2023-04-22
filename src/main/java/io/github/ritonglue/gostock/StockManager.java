@@ -211,7 +211,6 @@ public class StockManager {
 		public static class Builder {
 			private BigDecimal quantity;
 			private MonetaryAmount amount;
-			private MonetaryAmount unitAmount;
 			private TradeType tradeType;
 			private Object source;
 
@@ -219,12 +218,8 @@ public class StockManager {
 			public Builder amount(MonetaryAmount amount) {this.amount = amount; return this;}
 			public Builder tradeType(TradeType tradeType) {this.tradeType = tradeType; return this;}
 			public Builder source(Object source) {this.source = source; return this;}
-			public Builder unitAmount(MonetaryAmount unitAmount) {this.unitAmount = unitAmount; return this;}
 
 			private Trade build() {
-				if(unitAmount != null && amount == null && quantity != null) {
-					amount = unitAmount.multiply(quantity);
-				}
 				List<Trade> buyValues = null;
 				switch(tradeType) {
 					case BUY:
@@ -266,6 +261,17 @@ public class StockManager {
 		
 		public static Trade buy(BigDecimal quantity, MonetaryAmount amount, Object source) {
 			return tradeType(TradeType.BUY).amount(amount).quantity(quantity).source(source).build();
+		}
+
+		/**
+		 * create a buy value based on a unit amount
+		 * @param quantity
+		 * @param unitAmount amount for one quantity
+		 * @param source
+		 * @return same as buy(quantity, unitAmount.multiply(quantity), source)
+		 */
+		public static Trade buyUnitAmount(BigDecimal quantity, MonetaryAmount unitAmount, Object source) {
+			return buy(quantity, unitAmount.multiply(quantity), source);
 		}
 
 		public static Trade sell(BigDecimal quantity, Object source) {
