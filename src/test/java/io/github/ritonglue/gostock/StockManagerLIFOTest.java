@@ -56,9 +56,9 @@ public class StockManagerLIFOTest {
 		SourceTest a = new SourceTest(id++);
 		list.add(Trade.buy(quantity, amount, a));
 		StockManager manager = newStockManager();
-		PositionLines result = manager.process(list);
-		Assert.assertTrue(result.getClosedPositions().isEmpty());
-		List<Position> positions = result.getOpenedPositions();
+		manager.process(list);
+		Assert.assertTrue(manager.getClosedPositions().isEmpty());
+		List<Position> positions = manager.getOpenedPositions();
 		Assert.assertEquals(1, positions.size());
 		Position position = positions.get(0);
 		Assert.assertTrue(position.isOpened());
@@ -79,9 +79,9 @@ public class StockManagerLIFOTest {
 		list.add(Trade.buy(quantity, amount, a));
 		list.add(Trade.sell(quantity, b));
 		StockManager manager = newStockManager();
-		PositionLines result = manager.process(list);
-		Assert.assertTrue(result.getOpenedPositions().isEmpty());
-		List<Position> positions = result.getClosedPositions();
+		manager.process(list);
+		Assert.assertTrue(manager.getOpenedPositions().isEmpty());
+		List<Position> positions = manager.getClosedPositions();
 		Assert.assertEquals(1, positions.size());
 		Position position = positions.get(0);
 		Assert.assertTrue(position.isClosed());
@@ -105,9 +105,9 @@ public class StockManagerLIFOTest {
 		list.add(Trade.buy(quantity, amount, a));
 		list.add(Trade.sell(quantitySell, b));
 		StockManager manager = newStockManager();
-		PositionLines result = manager.process(list);
-		List<Position> opened = result.getOpenedPositions();
-		List<Position> closed = result.getClosedPositions();
+		manager.process(list);
+		List<Position> opened = manager.getOpenedPositions();
+		List<Position> closed = manager.getClosedPositions();
 		Assert.assertEquals(1, opened.size());
 		Assert.assertEquals(1, closed.size());
 
@@ -142,9 +142,9 @@ public class StockManagerLIFOTest {
 		list.add(Trade.sell(quantitySell, b));
 		list.add(Trade.sell(BigDecimal.ONE, c));
 		StockManager manager = newStockManager();
-		PositionLines result = manager.process(list);
-		List<Position> opened = result.getOpenedPositions();
-		List<Position> closed = result.getClosedPositions();
+		manager.process(list);
+		List<Position> opened = manager.getOpenedPositions();
+		List<Position> closed = manager.getClosedPositions();
 		Assert.assertTrue(opened.isEmpty());
 		Assert.assertEquals(2, closed.size());
 
@@ -178,9 +178,9 @@ public class StockManagerLIFOTest {
 		list.add(Trade.buy(createQuantity(3), createMoney(100), a));
 		list.add(Trade.sell(createQuantity(4), c));//closes 3 + 1
 		StockManager manager = newStockManager();
-		PositionLines result = manager.process(list);
-		List<Position> opened = result.getOpenedPositions();
-		List<Position> closed = result.getClosedPositions();
+		manager.process(list);
+		List<Position> opened = manager.getOpenedPositions();
+		List<Position> closed = manager.getClosedPositions();
 		Assert.assertEquals(1, opened.size());
 		Assert.assertEquals(2, closed.size());
 
@@ -225,9 +225,9 @@ public class StockManagerLIFOTest {
 		list.add(Trade.buy(createQuantity(7), createMoney(200), d));
 		list.add(Trade.sell(createQuantity(3), e)); //closes 3. 4 stays open
 		StockManager manager = newStockManager();
-		PositionLines result = manager.process(list);
-		List<Position> opened = result.getOpenedPositions();
-		List<Position> closed = result.getClosedPositions();
+		manager.process(list);
+		List<Position> opened = manager.getOpenedPositions();
+		List<Position> closed = manager.getClosedPositions();
 		Assert.assertEquals(2, opened.size());
 		Assert.assertEquals(3, closed.size());
 
@@ -290,9 +290,9 @@ public class StockManagerLIFOTest {
 		list.add(Trade.sell(createQuantity(9), e));//closes 7 + 2. 1 stays opened
 		list.add(Trade.buy(createQuantity(2), createMoney("33.33"), f));
 		StockManager manager = newStockManager();
-		PositionLines result = manager.process(list);
-		List<Position> opened = result.getOpenedPositions();
-		List<Position> closed = result.getClosedPositions();
+		manager.process(list);
+		List<Position> opened = manager.getOpenedPositions();
+		List<Position> closed = manager.getClosedPositions();
 		Assert.assertEquals(2, opened.size());
 		Assert.assertEquals(4, closed.size());
 
@@ -366,9 +366,9 @@ public class StockManagerLIFOTest {
 		list.add(Trade.buy(createQuantity(2), createMoney("33.33"), f));
 		list.add(Trade.sell(createQuantity(3), g));//closes 2 + 1
 		StockManager manager = newStockManager();
-		PositionLines result = manager.process(list);
-		List<Position> opened = result.getOpenedPositions();
-		List<Position> closed = result.getClosedPositions();
+		manager.process(list);
+		List<Position> opened = manager.getOpenedPositions();
+		List<Position> closed = manager.getClosedPositions();
 		Assert.assertTrue(opened.isEmpty());
 		Assert.assertEquals(6, closed.size());
 
@@ -438,9 +438,9 @@ public class StockManagerLIFOTest {
 		list.add(Trade.buy(quantity, amount, a));
 		list.add(Trade.modification(createMoney(-30)));
 
-		PositionLines result = manager.process(list);
-		Assert.assertTrue(result.getClosedPositions().isEmpty());
-		List<Position> positions = result.getOpenedPositions();
+		manager.process(list);
+		Assert.assertTrue(manager.getClosedPositions().isEmpty());
+		List<Position> positions = manager.getOpenedPositions();
 		Assert.assertEquals(1, positions.size());
 		Position position = positions.get(0);
 		Assert.assertTrue(position.isOpened());
@@ -463,9 +463,9 @@ public class StockManagerLIFOTest {
 		list.add(Trade.sell(quantitySell, b));
 		list.add(Trade.modification(createMoney(-10)));
 		StockManager manager = newStockManager();
-		PositionLines result = manager.process(list);
-		List<Position> opened = result.getOpenedPositions();
-		List<Position> closed = result.getClosedPositions();
+		manager.process(list);
+		List<Position> opened = manager.getOpenedPositions();
+		List<Position> closed = manager.getClosedPositions();
 		Assert.assertEquals(1, opened.size());
 		Assert.assertEquals(1, closed.size());
 
@@ -501,9 +501,9 @@ public class StockManagerLIFOTest {
 		list.add(Trade.modification(createMoney(-10)));
 		list.add(Trade.sell(BigDecimal.ONE, c));
 		StockManager manager = newStockManager();
-		PositionLines result = manager.process(list);
-		List<Position> opened = result.getOpenedPositions();
-		List<Position> closed = result.getClosedPositions();
+		manager.process(list);
+		List<Position> opened = manager.getOpenedPositions();
+		List<Position> closed = manager.getClosedPositions();
 		Assert.assertTrue(opened.isEmpty());
 		Assert.assertEquals(2, closed.size());
 
@@ -542,9 +542,9 @@ public class StockManagerLIFOTest {
 		list.add(Trade.buy(createQuantity(7), createMoney(200), d));
 		list.add(Trade.sell(createQuantity(3), e)); //closes 3. 4 stays open
 		StockManager manager = newStockManager();
-		PositionLines result = manager.process(list);
-		List<Position> opened = result.getOpenedPositions();
-		List<Position> closed = result.getClosedPositions();
+		manager.process(list);
+		List<Position> opened = manager.getOpenedPositions();
+		List<Position> closed = manager.getClosedPositions();
 		Assert.assertEquals(2, opened.size());
 		Assert.assertEquals(3, closed.size());
 
@@ -604,9 +604,9 @@ public class StockManagerLIFOTest {
 		list.add(Trade.buy(createQuantity(200), createMoney(200*150), b));
 		list.add(Trade.sell(createQuantity(250), c));
 		StockManager manager = newStockManager();
-		PositionLines result = manager.process(list);
-		List<Position> opened = result.getOpenedPositions();
-		List<Position> closed = result.getClosedPositions();
+		manager.process(list);
+		List<Position> opened = manager.getOpenedPositions();
+		List<Position> closed = manager.getClosedPositions();
 		Assert.assertEquals(1, opened.size());
 		Assert.assertEquals(2, closed.size());
 
@@ -646,9 +646,9 @@ public class StockManagerLIFOTest {
 		list.add(Trade.buy(createQuantity(3), createMoney(160), b));
 		list.add(Trade.modification(createMoney(-50)));
 		StockManager manager = newStockManager();
-		PositionLines result = manager.process(list);
-		List<Position> openedPositions = result.getOpenedPositions();
-		List<Position> closedPositions = result.getClosedPositions();
+		manager.process(list);
+		List<Position> openedPositions = manager.getOpenedPositions();
+		List<Position> closedPositions = manager.getClosedPositions();
 		Assert.assertTrue(closedPositions.isEmpty());
 		Assert.assertEquals(2, openedPositions.size());
 		Assert.assertEquals(createMoney(210)
