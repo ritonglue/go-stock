@@ -111,10 +111,8 @@ public class StockManager {
 		if(trade.getTradeType() != TradeType.RBT) return;
 		BigDecimal quantity = trade.getQuantity();
 		if(quantity == null) {
-			quantity = BigDecimal.ZERO;
-			for(Trade t : strategy) {
-				quantity = quantity.add(t.getQuantity());
-			}
+			//full reimbursement required
+			quantity = strategy.getQuantity();
 			trade.setQuantity(quantity);
 		}
 		sell(trade, context);
