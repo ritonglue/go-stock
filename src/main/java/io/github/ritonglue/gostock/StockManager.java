@@ -127,6 +127,7 @@ public class StockManager {
 
 		MonetaryAmount modificationAmount = t.getAmount();
 		CurrencyUnit currency = modificationAmount.getCurrency();
+		factory = factory.setCurrency(currency);
 		BigDecimal stockQuantity = strategy.getQuantity();
 
 		for(Trade tmp : strategy) {
@@ -144,7 +145,7 @@ public class StockManager {
 					m = m.divide(stockQuantity);
 				} catch(ArithmeticException e) {
 					double x = m.getNumber().doubleValue() / stockQuantity.doubleValue();
-					m = factory.setCurrency(currency).setNumber(x).create();
+					m = factory.setNumber(x).create();
 				}
 				m = m.with(Monetary.getDefaultRounding());
 			}
@@ -179,17 +180,18 @@ public class StockManager {
 		final BigDecimal stockQuantity = buy.getQuantity();
 		final MonetaryAmount stockAmount = buy.getAmount();
 		CurrencyUnit currency = stockAmount.getCurrency();
+		factory = factory.setCurrency(currency);
 		Object sellSource = sell.getSource();
 		Object buySource = buy.getSource();
 		if(sell.getAmount() == null) {
 			//set to zero
-			sell.setAmount(factory.setCurrency(currency).setNumber(BigDecimal.ZERO).create());
+			sell.setAmount(factory.setNumber(BigDecimal.ZERO).create());
 		}
 		int nsign = stockQuantity.compareTo(sellQuantity);
 		if(nsign <= 0) {
 			//sell everything
 			buy.setQuantity(BigDecimal.ZERO);
-			buy.setAmount(factory.setCurrency(currency).setNumber(BigDecimal.ZERO).create());
+			buy.setAmount(factory.setNumber(BigDecimal.ZERO).create());
 			sell.setAmount(sell.getAmount().add(stockAmount));
 			sell.setQuantity(sell.getQuantity().subtract(stockQuantity));
 			Position position = new Position(buySource, sellSource, stockQuantity, stockAmount, closeCause);
@@ -206,7 +208,7 @@ public class StockManager {
 				m = m.divide(stockQuantity);
 			} catch(ArithmeticException e) {
 				double x = m.getNumber().doubleValue() / stockQuantity.doubleValue();
-				m = factory.setCurrency(currency).setNumber(x).create();
+				m = factory.setNumber(x).create();
 			}
 			m = m.with(Monetary.getDefaultRounding());
 			buy.setAmount(stockAmount.subtract(m));
