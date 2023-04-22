@@ -12,7 +12,6 @@ import javax.money.CurrencyUnit;
 import javax.money.Monetary;
 import javax.money.MonetaryAmount;
 import javax.money.MonetaryAmountFactory;
-import javax.money.MonetaryOperator;
 
 import io.github.ritonglue.gostock.strategy.FIFOStrategy;
 import io.github.ritonglue.gostock.strategy.LIFOStrategy;
@@ -122,28 +121,14 @@ public class StockManager {
 		sell(trade, context);
 	}
 
-	private static BigDecimal evalQuantity(Strategy strategy) {
-		Iterator<Trade> iterator = strategy.iterator();
-		Trade tmp = null;
-		BigDecimal stockQuantity = null;
-		if(iterator.hasNext()) {
-			tmp = iterator.next();
-			stockQuantity = tmp.getQuantity();
-		}
-		while(iterator.hasNext()) {
-			tmp = iterator.next();
-			stockQuantity = stockQuantity.add(tmp.getQuantity());
-		}
-		return stockQuantity;
-	}
-
 	private void modification(Trade t, Context context) {
 		if(t.getTradeType() != TradeType.MODIFICATION) return;
 		Strategy strategy = context.getStrategy();
 		MonetaryAmountFactory<?> factory = context.getFactory();
 
-		BigDecimal stockQuantity = evalQuantity(strategy);
-		CurrencyUnit currency = t.getAmount().getCurrency();
+		MonetaryAmount modificationAmount = t.getAmount();
+		CurrencyUnit currency = modificationAmount.getCurrency();
+		BigDecimal stockQuantity = strategy.getQuantity();
 
 		for(Trade tmp : strategy) {
 			BigDecimal quantity = tmp.getQuantity();
@@ -151,14 +136,19 @@ public class StockManager {
 			if(tmp.getAmount().signum() < 0) {
 				throw new RuntimeException("amount is < 0: " + t.getSource());
 			}
-			MonetaryAmount m = amount.multiply(quantity);
-			try {
-				m = m.divide(stockQuantity);
-			} catch(ArithmeticException e) {
-				double x = m.getNumber().doubleValue() / stockQuantity.doubleValue();
-				m = factory.setCurrency(currency).setNumber(x).create();
+			MonetaryAmount m = null;
+			if(quantity.compareTo(stockQuantity) == 0) {
+				m = amount;
+			} else {
+				m = amount.multiply(quantity);
+				try {
+					m = m.divide(stockQuantity);
+				} catch(ArithmeticException e) {
+					double x = m.getNumber().doubleValue() / stockQuantity.doubleValue();
+					m = factory.setCurrency(currency).setNumber(x).create();
+				}
+				m = m.with(Monetary.getDefaultRounding());
 			}
-			m = m.with(Monetary.getDefaultRounding());
 			tmp.setAmount(tmp.getAmount().add(m));
 			t.setAmount(amount.subtract(m));
 			stockQuantity = stockQuantity.subtract(quantity);
