@@ -17,8 +17,15 @@ import io.github.ritonglue.gostock.strategy.LIFOStrategy;
 import io.github.ritonglue.gostock.strategy.PRMPStrategy;
 import io.github.ritonglue.gostock.strategy.Strategy;
 
+/**
+ * not thread safe
+ *
+ */
 public class StockManager {
 	private final Mode mode;
+	private final Strategy strategy;
+	private final MonetaryAmountFactory<?> factory = Monetary.getDefaultAmountFactory();
+	private final List<Position> closedPositions = new ArrayList<>();
 	
 	public StockManager() {
 		this(Mode.FIFO);
@@ -26,40 +33,6 @@ public class StockManager {
 
 	public StockManager(Mode mode) {
 		this.mode = Objects.requireNonNull(mode, "mode null");
-	}
-
-	private static class Context {
-		private final MonetaryAmountFactory<?> factory = Monetary.getDefaultAmountFactory();
-		private final PositionLines lines = new PositionLines();
-		private final Strategy strategy;
-
-		private Context(Strategy strategy) {
-			this.strategy = strategy;
-		}
-
-		private PositionLines getLines() {
-			return lines;
-		}
-
-		public List<Position> getClosedPositions() {
-			return lines.getClosedPositions();
-		}
-
-		public List<Position> getOpenedPositions() {
-			return lines.getOpenedPositions();
-		}
-
-		public MonetaryAmountFactory<?> getFactory() {
-			return factory;
-		}
-
-		public Strategy getStrategy() {
-			return strategy;
-		}
-	}
-
-	private Context newContext() {
-		Strategy strategy = null;
 		switch(mode) {
 		case FIFO:
 			strategy = new FIFOStrategy();
@@ -73,55 +46,65 @@ public class StockManager {
 		default:
 			throw new AssertionError();
 		}
-		Context context = new Context(strategy);
-		return context;
+	}
+
+	public List<Position> getOpenedPositions() {
+		List<Position> openedPositions = new ArrayList<>();
+		Strategy strategy = this.getStrategy();
+		for(Trade t : strategy) {
+			Position position = new Position(t.getSource(), t.getQuantity(), t.getAmount());
+			openedPositions.add(position);
+		}
+		return openedPositions;
+	}
+
+	public List<Position> getClosedPositions() {
+		return Collections.unmodifiableList(this.closedPositions);
 	}
 
 	/**
 	 * @param trades in ascending time order
-	 * @return
 	 */
-	public PositionLines process(Iterable<Trade> trades) {
-		Context context = this.newContext();
-		Strategy strategy = context.getStrategy();
+	public void process(Iterable<Trade> trades) {
 		for(Trade t : trades) {
-			if(t == null) continue;
-			TradeType type = t.getTradeType();
-			switch(type) {
-			case BUY:
-				strategy.add(t);
-				break;
-			case SELL:
-				sell(t, context);
-				break;
-			case MODIFICATION:
-				modification(t, context);
-				break;
-			case RBT:
-				reimbursement(t, context);
-				break;
-			}
+			add(t);
 		}
-		createOpenPosition(context);
-		return context.getLines();
 	}
 
-	private void reimbursement(Trade trade, Context context) {
-		Strategy strategy = context.getStrategy();
+	public void add(Trade trade) {
+		if(trade == null) return;
+		TradeType type = trade.getTradeType();
+		switch(type) {
+		case BUY:
+			this.getStrategy().add(trade);
+			break;
+		case SELL:
+			sell(trade);
+			break;
+		case MODIFICATION:
+			modification(trade);
+			break;
+		case RBT:
+			reimbursement(trade);
+			break;
+		}
+	}
+
+	private void reimbursement(Trade trade) {
 		if(trade.getTradeType() != TradeType.RBT) return;
 		BigDecimal quantity = trade.getQuantity();
 		if(quantity == null) {
 			//full reimbursement required
-			quantity = strategy.getQuantity();
+			quantity = this.getStrategy().getQuantity();
 			trade.setQuantity(quantity);
 		}
-		sell(trade, context);
+		sell(trade);
 	}
 
-	private void modification(Trade t, Context context) {
+	private void modification(Trade t) {
 		if(t.getTradeType() != TradeType.MODIFICATION) return;
-		Strategy strategy = context.getStrategy();
-		MonetaryAmountFactory<?> factory = context.getFactory();
+		Strategy strategy = this.getStrategy();
+		MonetaryAmountFactory<?> factory = this.getFactory();
 
 		MonetaryAmount modificationAmount = t.getAmount();
 		CurrencyUnit currency = modificationAmount.getCurrency();
@@ -153,7 +136,7 @@ public class StockManager {
 		}
 	}
 
-	private void sell(Trade sell, Context context) {
+	private void sell(Trade sell) {
 		CloseCause closeCause = null;
 		switch(sell.getTradeType()) {
 		case SELL:
@@ -165,12 +148,10 @@ public class StockManager {
 		default:
 			return;
 		}
-		Strategy strategy = context.getStrategy();
+		Strategy strategy = this.getStrategy();
 		if(strategy.isEmpty()) return;
 
-		MonetaryAmountFactory<?> factory = context.getFactory();
-		List<Position> closedPositions = context.getClosedPositions();
-
+		MonetaryAmountFactory<?> factory = this.getFactory();
 		BigDecimal sellQuantity = sell.getQuantity();
 		if(sellQuantity.signum() <= 0) return;
 
@@ -196,7 +177,7 @@ public class StockManager {
 			closedPositions.add(position);
 			strategy.remove();
 			if(nsign < 0) {
-				sell(sell, context);
+				sell(sell);
 			}
 		} else {
 			//partial sell
@@ -346,17 +327,15 @@ public class StockManager {
 		}
 	}
 	
-	private void createOpenPosition(Context context) {
-		Strategy strategy = context.getStrategy();
-		List<Position> openedPositions = context.getOpenedPositions();
-		for(Trade t : strategy) {
-			Position position = new Position(t.getSource(), t.getQuantity(), t.getAmount());
-			openedPositions.add(position);
-		}
-		strategy.clear();
-	}
-
 	public Mode getMode() {
 		return mode;
+	}
+
+	private Strategy getStrategy() {
+		return this.strategy;
+	}
+
+	private MonetaryAmountFactory<?> getFactory() {
+		return factory;
 	}
 }
