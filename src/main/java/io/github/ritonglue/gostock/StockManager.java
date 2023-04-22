@@ -240,7 +240,7 @@ public class StockManager {
 			public Builder source(Object source) {this.source = source; return this;}
 			public Builder unitAmount(MonetaryAmount unitAmount) {this.unitAmount = unitAmount; return this;}
 
-			public Trade build() {
+			private Trade build() {
 				if(unitAmount != null && amount == null && quantity != null) {
 					amount = unitAmount.multiply(quantity);
 				}
