@@ -26,10 +26,8 @@ public final class PRMPStrategy implements Strategy {
 			buyValue = t.getAmount();
 			buyQuantity = t.getQuantity();
 		} else {
-			BigDecimal stockQuantity = stock.getQuantity();
-			MonetaryAmount stockValue = stock.getAmount();
-			buyValue = stockValue = stockValue.add(t.getAmount());
-			buyQuantity = stockQuantity = stockQuantity.add(t.getQuantity());
+			buyValue = stock.getAmount().add(t.getAmount());
+			buyQuantity = stock.getQuantity().add(t.getQuantity());
 		}
 		stock = Trade.buy(buyQuantity, buyValue, null);
 		return true;
