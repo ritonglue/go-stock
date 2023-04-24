@@ -852,16 +852,126 @@ public class StockManagerFIFOTest {
 
 		Position position = openedPositions.get(0);
 		Assert.assertEquals(createQuantity(8), position.getQuantity());
-		Assert.assertEquals(createMoney("63.64"), position.getAmount());
+		Assert.assertEquals(createMoney("80.77"), position.getAmount());
 		Assert.assertTrue(position.isOpened());
 		SourceTest buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(a, buy);
 
 		position = openedPositions.get(1);
 		Assert.assertEquals(createQuantity(3), position.getQuantity());
-		Assert.assertEquals(createMoney("146.36"), position.getAmount());
+		Assert.assertEquals(createMoney("129.23"), position.getAmount());
 		Assert.assertTrue(position.isOpened());
 		buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(b, buy);
+	}
+
+	@Test
+	public void testStepByStep() {
+		int id = 1;
+		SourceTest a = new SourceTest(id++);
+		StockManager manager = newStockManager();
+		List<Position> openedPositions = manager.getOpenedPositions();
+		List<Position> closedPositions = manager.getClosedPositions();
+		Assert.assertTrue(openedPositions.isEmpty());
+		Assert.assertTrue(closedPositions.isEmpty());
+		Trade stock = manager.getStock();
+		Assert.assertEquals(createQuantity(0), stock.getQuantity());
+		Assert.assertNull(stock.getAmount());
+
+		manager.add(Trade.buy(createQuantity(3), createMoney(100), a));
+		openedPositions = manager.getOpenedPositions();
+		closedPositions = manager.getClosedPositions();
+		stock = manager.getStock();
+		Assert.assertEquals(createQuantity(3), stock.getQuantity());
+		Assert.assertEquals(createMoney(100), stock.getAmount());
+		Assert.assertEquals(1, openedPositions.size());
+		Assert.assertTrue(closedPositions.isEmpty());
+		Assert.assertEquals(createQuantity(3), openedPositions.get(0).getQuantity());
+		Assert.assertEquals(createMoney(100), openedPositions.get(0).getAmount());
+
+		SourceTest b = new SourceTest(id++);
+		manager.add(Trade.buy(createQuantity(9), createMoney(50), b));
+		openedPositions = manager.getOpenedPositions();
+		closedPositions = manager.getClosedPositions();
+		stock = manager.getStock();
+		Assert.assertEquals(createQuantity(12), stock.getQuantity());
+		Assert.assertEquals(createMoney(150), stock.getAmount());
+		Assert.assertEquals(2, openedPositions.size());
+		Assert.assertTrue(closedPositions.isEmpty());
+		Assert.assertEquals(createQuantity(3), openedPositions.get(0).getQuantity());
+		Assert.assertEquals(createMoney(100), openedPositions.get(0).getAmount());
+		Assert.assertEquals(a, openedPositions.get(0).getBuy());
+		Assert.assertEquals(createQuantity(9), openedPositions.get(1).getQuantity());
+		Assert.assertEquals(createMoney(50), openedPositions.get(1).getAmount());
+		Assert.assertEquals(b, openedPositions.get(1).getBuy());
+
+		SourceTest c = new SourceTest(id++);
+		manager.add(Trade.sell(createQuantity(4), c));
+		openedPositions = manager.getOpenedPositions();
+		closedPositions = manager.getClosedPositions();
+		stock = manager.getStock();
+		Assert.assertEquals(createQuantity(8), stock.getQuantity());
+		Assert.assertEquals(createMoney("44.44"), stock.getAmount());
+		Assert.assertEquals(1, openedPositions.size());
+		Assert.assertEquals(2, closedPositions.size());
+		Assert.assertEquals(createQuantity(8), openedPositions.get(0).getQuantity());
+		Assert.assertEquals(createMoney("44.44"), openedPositions.get(0).getAmount());
+		Assert.assertEquals(b, openedPositions.get(0).getBuy());
+
+		Assert.assertEquals(createQuantity(3), closedPositions.get(0).getQuantity());
+		Assert.assertEquals(createMoney(100), closedPositions.get(0).getAmount());
+		Assert.assertEquals(a, closedPositions.get(0).getBuy());
+		Assert.assertEquals(c, closedPositions.get(0).getSell());
+
+		Assert.assertEquals(createQuantity(1), closedPositions.get(1).getQuantity());
+		Assert.assertEquals(createMoney("5.56"), closedPositions.get(1).getAmount());
+		Assert.assertEquals(b, closedPositions.get(1).getBuy());
+		Assert.assertEquals(c, closedPositions.get(1).getSell());
+
+		SourceTest d = new SourceTest(id++);
+		manager.add(Trade.buy(createQuantity(4), createMoney(77), d));
+		openedPositions = manager.getOpenedPositions();
+		closedPositions = manager.getClosedPositions();
+		stock = manager.getStock();
+		Assert.assertEquals(createQuantity(12), stock.getQuantity());
+		Assert.assertEquals(createMoney("121.44"), stock.getAmount());
+		Assert.assertEquals(2, openedPositions.size());
+		Assert.assertEquals(2, closedPositions.size());
+		Assert.assertEquals(b, openedPositions.get(0).getBuy());
+		Assert.assertEquals(createQuantity(8), openedPositions.get(0).getQuantity());
+		Assert.assertEquals(createMoney("44.44"), openedPositions.get(0).getAmount());
+		Assert.assertEquals(d, openedPositions.get(1).getBuy());
+		Assert.assertEquals(createQuantity(4), openedPositions.get(1).getQuantity());
+		Assert.assertEquals(createMoney(77), openedPositions.get(1).getAmount());
+
+		manager.add(Trade.modification(createMoney(-100)));
+		stock = manager.getStock();
+		openedPositions = manager.getOpenedPositions();
+		closedPositions = manager.getClosedPositions();
+		Assert.assertEquals(createQuantity(12), stock.getQuantity());
+		Assert.assertEquals(createMoney("21.44"), stock.getAmount());
+		Assert.assertEquals(2, openedPositions.size());
+		Assert.assertEquals(2, closedPositions.size());
+		Assert.assertEquals(b, openedPositions.get(0).getBuy());
+		Assert.assertEquals(d, openedPositions.get(1).getBuy());
+		Assert.assertEquals(createQuantity(8), openedPositions.get(0).getQuantity());
+		Assert.assertEquals(createMoney("7.85"), openedPositions.get(0).getAmount());
+		Assert.assertEquals(createQuantity(4), openedPositions.get(1).getQuantity());
+		Assert.assertEquals(createMoney("13.59"), openedPositions.get(1).getAmount());
+
+		SourceTest e = new SourceTest(id++);
+		manager.add(Trade.sell(createQuantity(12), e));
+		stock = manager.getStock();
+		openedPositions = manager.getOpenedPositions();
+		closedPositions = manager.getClosedPositions();
+		Assert.assertTrue(openedPositions.isEmpty());
+		Assert.assertEquals(4, closedPositions.size());
+		Assert.assertEquals(createQuantity(0), stock.getQuantity());
+		Assert.assertNull(stock.getAmount());
+
+		Assert.assertEquals(b, closedPositions.get(2).getBuy());
+		Assert.assertEquals(e, closedPositions.get(2).getSell());
+		Assert.assertEquals(d, closedPositions.get(3).getBuy());
+		Assert.assertEquals(e, closedPositions.get(3).getSell());
 	}
 }

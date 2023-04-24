@@ -657,14 +657,14 @@ public class StockManagerLIFOTest {
 
 		Position position = openedPositions.get(0);
 		Assert.assertEquals(createQuantity(3), position.getQuantity());
-		Assert.assertEquals(createMoney("146.36"), position.getAmount());
+		Assert.assertEquals(createMoney("129.23"), position.getAmount());
 		Assert.assertTrue(position.isOpened());
 		SourceTest buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(b, buy);
 
 		position = openedPositions.get(1);
 		Assert.assertEquals(createQuantity(8), position.getQuantity());
-		Assert.assertEquals(createMoney("63.64"), position.getAmount());
+		Assert.assertEquals(createMoney("80.77"), position.getAmount());
 		Assert.assertTrue(position.isOpened());
 		buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(a, buy);
