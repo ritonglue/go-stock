@@ -449,4 +449,31 @@ public class StockManagerPRMPTest {
 		Assert.assertEquals(createMoney(210), position.getAmount());
 		Assert.assertTrue(position.isOpened());
 	}
+
+	@Test
+	public void testModification3() {
+		int id = 1;
+		List<Trade> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		SourceTest b = new SourceTest(id++);
+		SourceTest c = new SourceTest(id++);
+		list.add(Trade.buy(createQuantity(8), createMoney(100), a));
+		list.add(Trade.buy(createQuantity(3), createMoney(160), b));
+		list.add(Trade.buy(createQuantity(7), createMoney(90), c));
+		list.add(Trade.modification(createMoney(-79)));
+		StockManager manager = newStockManager();
+		manager.process(list);
+		List<Position> openedPositions = manager.getOpenedPositions();
+		List<Position> closedPositions = manager.getClosedPositions();
+		Trade stock = manager.getStock();
+		Assert.assertTrue(closedPositions.isEmpty());
+		Assert.assertEquals(1, openedPositions.size());
+		Assert.assertEquals(createQuantity(8+3+7), stock.getQuantity());
+		Assert.assertEquals(createMoney(100+160+90-79), stock.getAmount());
+
+		Position position = openedPositions.get(0);
+		Assert.assertEquals(createQuantity(8+3+7), position.getQuantity());
+		Assert.assertEquals(createMoney(100+160+90-79), position.getAmount());
+		Assert.assertTrue(position.isOpened());
+	}
 }
