@@ -112,22 +112,55 @@ public class StockManager {
 			Trade tmp = iter.next();
 			tmp.setAmount(tmp.getAmount().add(modificationAmount));
 		} else {
-			//sum absolute value of stock : paranoïa ?
-			MonetaryAmount stockAmount = iter.next().getAmount();
+			Trade tmp = iter.next();
+			MonetaryAmount stockAmount = tmp.getAmount();
 			MonetaryAmount stockAmountAbs = stockAmount.abs();
+			BigDecimal stockQuantity = tmp.getQuantity();
 			while(iter.hasNext()) {
-				MonetaryAmount tmp = iter.next().getAmount();
-				stockAmount = stockAmount.add(tmp);
-				stockAmountAbs = stockAmountAbs.add(tmp.abs());
+				tmp = iter.next();
+				MonetaryAmount amount = tmp.getAmount();
+				stockAmount = stockAmount.add(amount);
+				stockAmountAbs = stockAmountAbs.add(amount.abs());
+				stockQuantity = stockQuantity.add(tmp.getQuantity());
 			}
+			iter = strategy.iterator();
 			if(stockAmountAbs.signum() == 0) {
-				throw new AssertionError("not implemented");
+				if(stockQuantity.signum() == 0) {
+					return;
+				}
+				//by quantity proportion
+				modification(modificationAmount, stockQuantity, iter);
 			} else {
-				modification(modificationAmount, stockAmountAbs, stockAmount, strategy.iterator());
+				//by absolute amount proportion
+				modification(modificationAmount, stockAmountAbs, stockAmount, iter);
 			}
 		}
 	}
 	
+	private void modification(MonetaryAmount modificationAmount, BigDecimal stockQuantity, Iterator<Trade> iterator) {
+		if(!iterator.hasNext()) return;
+		Trade tmp = iterator.next();
+		//proportion by quantity
+		MonetaryAmount amount = tmp.getAmount();
+		BigDecimal quantity = tmp.getQuantity();
+		if(quantity.equals(stockQuantity)) {
+			tmp.setAmount(amount.add(modificationAmount));
+		} else {
+			MonetaryAmount value = modificationAmount.multiply(quantity);
+			try {
+				value = value.divide(stockQuantity);
+			} catch(ArithmeticException e) {
+				double x = value.getNumber().doubleValue() / stockQuantity.doubleValue();
+				value = factory.setNumber(x).setCurrency(amount.getCurrency()).create();
+			}
+			value = value.with(Monetary.getDefaultRounding());
+			tmp.setAmount(amount.add(value));
+			modificationAmount = modificationAmount.subtract(value);
+			stockQuantity = stockQuantity.subtract(quantity);
+			modification(modificationAmount, stockQuantity, iterator);
+		}
+	}
+
 	private void modification(MonetaryAmount modificationAmount, MonetaryAmount stockAmountAbs, MonetaryAmount stockAmount, Iterator<Trade> iterator) {
 		if(!iterator.hasNext()) return;
 		Trade tmp = iterator.next();
