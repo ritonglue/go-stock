@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
@@ -104,36 +105,50 @@ public class StockManager {
 	private void modification(Trade t) {
 		if(t.getTradeType() != TradeType.MODIFICATION) return;
 		Strategy strategy = this.getStrategy();
-		MonetaryAmountFactory<?> factory = this.getFactory();
-
 		MonetaryAmount modificationAmount = t.getAmount();
-		CurrencyUnit currency = modificationAmount.getCurrency();
-		factory = factory.setCurrency(currency);
-		BigDecimal stockQuantity = strategy.getQuantity();
-
-		for(Trade tmp : strategy) {
-			BigDecimal quantity = tmp.getQuantity();
-			MonetaryAmount amount = t.getAmount();
-			if(tmp.getAmount().signum() < 0) {
-				throw new RuntimeException("amount is < 0: " + t.getSource());
+		Iterator<Trade> iter = strategy.iterator();
+		if(strategy.size() == 1) {
+			//easy case
+			Trade tmp = iter.next();
+			tmp.setAmount(tmp.getAmount().add(modificationAmount));
+		} else {
+			//sum absolute value of stock : paranoïa ?
+			MonetaryAmount stockAmount = iter.next().getAmount();
+			MonetaryAmount stockAmountAbs = stockAmount.abs();
+			while(iter.hasNext()) {
+				MonetaryAmount tmp = iter.next().getAmount();
+				stockAmount = stockAmount.add(tmp);
+				stockAmountAbs = stockAmountAbs.add(tmp.abs());
 			}
-			MonetaryAmount m = null;
-			if(quantity.compareTo(stockQuantity) == 0) {
-				m = amount;
+			if(stockAmountAbs.signum() == 0) {
+				throw new AssertionError("not implemented");
 			} else {
-				m = amount.multiply(quantity);
-				try {
-					m = m.divide(stockQuantity);
-				} catch(ArithmeticException e) {
-					double x = m.getNumber().doubleValue() / stockQuantity.doubleValue();
-					m = factory.setNumber(x).create();
-				}
-				m = m.with(Monetary.getDefaultRounding());
+				modification(modificationAmount, stockAmountAbs, stockAmount, strategy.iterator());
 			}
-			tmp.setAmount(tmp.getAmount().add(m));
-			t.setAmount(amount.subtract(m));
-			stockQuantity = stockQuantity.subtract(quantity);
 		}
+	}
+	
+	private void modification(MonetaryAmount modificationAmount, MonetaryAmount stockAmountAbs, MonetaryAmount stockAmount, Iterator<Trade> iterator) {
+		if(!iterator.hasNext()) return;
+		Trade tmp = iterator.next();
+		//proportion by amount
+		MonetaryAmount amount = tmp.getAmount();
+		MonetaryAmount amountAbs = amount.abs();
+		if(amount.equals(stockAmount)) {
+			tmp.setAmount(amount.add(modificationAmount));
+		} else {
+			double factor = amountAbs.getNumber().doubleValue() / stockAmountAbs.getNumber().doubleValue();
+			MonetaryAmount value = modificationAmount.multiply(factor).with(Monetary.getDefaultRounding());
+			tmp.setAmount(amount.add(value));
+			stockAmount = stockAmount.subtract(amount);
+			stockAmountAbs = stockAmountAbs.subtract(amountAbs);
+			modificationAmount = modificationAmount.subtract(value);
+			modification(modificationAmount, stockAmountAbs, stockAmount, iterator);
+		}
+	}
+
+	public Trade getStock() {
+		return getStrategy().getStock();
 	}
 
 	private void sell(Trade sell) {
