@@ -220,7 +220,7 @@ public class StockManager {
 			buy.setQuantity(BigDecimal.ZERO);
 			buy.setAmount(factory.setNumber(BigDecimal.ZERO).create());
 			sell.setAmount(sell.getAmount().add(stockAmount));
-			sell.setQuantity(sell.getQuantity().subtract(stockQuantity));
+			sell.setQuantity(sellQuantity.subtract(stockQuantity));
 			Position position = new Position(buySource, sellSource, stockQuantity, stockAmount, closeCause);
 			closedPositions.add(position);
 			strategy.remove();
