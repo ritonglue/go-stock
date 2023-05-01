@@ -30,15 +30,27 @@ public class StockManager {
 	private final List<Position> closedPositions = new ArrayList<>();
 	private final MonetaryRounding rounding;
 	
+	/**
+	 * A stock manager in FIFO mode with default rouding operator
+	 */
 	public StockManager() {
 		this(Mode.FIFO);
 	}
 
+	/**
+	 * A stock manager with default rouding operator
+	 * @param mode
+	 */
 	public StockManager(Mode mode) {
 		this(mode, Monetary.getDefaultRounding());
 
 	}
 
+	/**
+	 * Build a stock manager
+	 * @param mode
+	 * @param rounding
+	 */
 	public StockManager(Mode mode, MonetaryRounding rounding) {
 		this.mode = Objects.requireNonNull(mode, "mode null");
 		switch(mode) {
