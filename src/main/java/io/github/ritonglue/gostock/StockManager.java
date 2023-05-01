@@ -266,6 +266,15 @@ public class StockManager {
 			public Builder quantity(long quantity) {return quantity(new BigDecimal(quantity));}
 			public Builder quantity(BigDecimal quantity) {this.quantity = quantity; return this;}
 			public Builder amount(MonetaryAmount amount) {this.amount = amount; return this;}
+			public Builder amount(Number number, String currency) {
+				return amount(Monetary.getDefaultAmountFactory().setCurrency(currency).setNumber(number).create());
+			}
+			public Builder amount(double number, String currency) {
+				return amount(Monetary.getDefaultAmountFactory().setCurrency(currency).setNumber(number).create());
+			}
+			public Builder amount(long number, String currency) {
+				return amount(Monetary.getDefaultAmountFactory().setCurrency(currency).setNumber(number).create());
+			}
 			public Builder tradeType(TradeType tradeType) {this.tradeType = tradeType; return this;}
 			public Builder source(Object source) {this.source = source; return this;}
 
