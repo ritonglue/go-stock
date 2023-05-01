@@ -12,6 +12,7 @@ import javax.money.CurrencyUnit;
 import javax.money.Monetary;
 import javax.money.MonetaryAmount;
 import javax.money.MonetaryAmountFactory;
+import javax.money.MonetaryRounding;
 
 import io.github.ritonglue.gostock.strategy.FIFOStrategy;
 import io.github.ritonglue.gostock.strategy.LIFOStrategy;
@@ -27,12 +28,18 @@ public class StockManager {
 	private final Strategy strategy;
 	private final MonetaryAmountFactory<?> factory = Monetary.getDefaultAmountFactory();
 	private final List<Position> closedPositions = new ArrayList<>();
+	private final MonetaryRounding rounding;
 	
 	public StockManager() {
 		this(Mode.FIFO);
 	}
 
 	public StockManager(Mode mode) {
+		this(mode, Monetary.getDefaultRounding());
+
+	}
+
+	public StockManager(Mode mode, MonetaryRounding rounding) {
 		this.mode = Objects.requireNonNull(mode, "mode null");
 		switch(mode) {
 		case FIFO:
@@ -47,6 +54,7 @@ public class StockManager {
 		default:
 			throw new AssertionError();
 		}
+		this.rounding = rounding;
 	}
 
 	public List<Position> getOpenedPositions() {
@@ -153,7 +161,7 @@ public class StockManager {
 				double x = value.getNumber().doubleValue() / stockQuantity.doubleValue();
 				value = factory.setNumber(x).setCurrency(amount.getCurrency()).create();
 			}
-			value = value.with(Monetary.getDefaultRounding());
+			value = value.with(getRounding());
 			tmp.setAmount(amount.add(value));
 			modificationAmount = modificationAmount.subtract(value);
 			stockQuantity = stockQuantity.subtract(quantity);
@@ -171,7 +179,7 @@ public class StockManager {
 			tmp.setAmount(amount.add(modificationAmount));
 		} else {
 			double factor = amountAbs.getNumber().doubleValue() / stockAmountAbs.getNumber().doubleValue();
-			MonetaryAmount value = modificationAmount.multiply(factor).with(Monetary.getDefaultRounding());
+			MonetaryAmount value = modificationAmount.multiply(factor).with(getRounding());
 			tmp.setAmount(amount.add(value));
 			stockAmount = stockAmount.subtract(amount);
 			stockAmountAbs = stockAmountAbs.subtract(amountAbs);
@@ -237,7 +245,7 @@ public class StockManager {
 				double x = m.getNumber().doubleValue() / stockQuantity.doubleValue();
 				m = factory.setNumber(x).create();
 			}
-			m = m.with(Monetary.getDefaultRounding());
+			m = m.with(getRounding());
 			buy.setAmount(stockAmount.subtract(m));
 			sell.setAmount(sell.getAmount().add(m));
 			sell.setQuantity(BigDecimal.ZERO);
@@ -402,5 +410,9 @@ public class StockManager {
 
 	private MonetaryAmountFactory<?> getFactory() {
 		return factory;
+	}
+
+	public MonetaryRounding getRounding() {
+		return rounding;
 	}
 }
