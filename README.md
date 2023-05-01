@@ -4,11 +4,13 @@ A library to manage a stock. The way quantities are sold can follow these rules 
 - LIFO accounting (Last In Last Out)
 - PRMP (Prix de Revient Moyen Pondéré) (Average Cost ?)
 
-This library uses the JavaMoney API (JSR 354)
+This library uses the JavaMoney API (JSR 354). You have to provide and implementation such as Moneta.
 
 It's also possible to modify the value of the stock.
 
 The trades must be ordered in time ascending order.
+
+Rouding is taken into account. For example, you can buy 3 items at 100.00 euros and sell them one by one. The first item is sold at 33.33 euros. The second at 33.34 euros and the last one at 33.33 euros.
 
 ## Table of Contents
 1. [Maven Dependency](#maven-dependency)
@@ -220,7 +222,7 @@ In PRMP mode, all buy values are mixed together and sold at the same price.
 ```
 
 ## Modification
-Just add a positive or negative amount to modify the amount of the stock. The quantity is unchanged.
+Just add a positive or negative amount to modify the amount of the stock. The quantity is unchanged. In case of multiple opened position, the modification amount is spread prorata their amounts.
 
 ``` java
 		stock = manager.getStock();
