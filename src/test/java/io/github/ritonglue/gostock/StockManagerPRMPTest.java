@@ -14,7 +14,7 @@ import javax.money.MonetaryAmountFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
-import io.github.ritonglue.gostock.StockManager.Trade;
+import io.github.ritonglue.gostock.StockManager.TradeWrapper;
 
 public class StockManagerPRMPTest {
 	private final CurrencyUnit cu = Monetary.getCurrency("EUR");
@@ -36,11 +36,11 @@ public class StockManagerPRMPTest {
 	@Test
 	public void testOneBuy() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		BigDecimal quantity = createQuantity(3);
 		MonetaryAmount amount = createMoney(100);
 		SourceTest a = new SourceTest(id++);
-		list.add(Trade.buy(quantity, amount, a));
+		list.add(TradeWrapper.buy(quantity, amount, a));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		Assert.assertTrue(manager.getClosedPositions().isEmpty());
@@ -55,13 +55,13 @@ public class StockManagerPRMPTest {
 	@Test
 	public void testOneFullSell() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		BigDecimal quantity = createQuantity(3);
 		MonetaryAmount amount = createMoney(100);
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
-		list.add(Trade.buy(quantity, amount, a));
-		list.add(Trade.sell(quantity, b));
+		list.add(TradeWrapper.buy(quantity, amount, a));
+		list.add(TradeWrapper.sell(quantity, b));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		Assert.assertTrue(manager.getOpenedPositions().isEmpty());
@@ -78,14 +78,14 @@ public class StockManagerPRMPTest {
 	@Test
 	public void testOnePartialSell() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		BigDecimal quantity = createQuantity(3);
 		MonetaryAmount amount = createMoney(100);
 		BigDecimal quantitySell = createQuantity(2);
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
-		list.add(Trade.buy(quantity, amount, a));
-		list.add(Trade.sell(quantitySell, b));
+		list.add(TradeWrapper.buy(quantity, amount, a));
+		list.add(TradeWrapper.sell(quantitySell, b));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> opened = manager.getOpenedPositions();
@@ -109,16 +109,16 @@ public class StockManagerPRMPTest {
 	@Test
 	public void testFullMultiPartialSell() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		BigDecimal quantity = createQuantity(3);
 		MonetaryAmount amount = createMoney(100);
 		BigDecimal quantitySell = createQuantity(2);
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
-		list.add(Trade.buy(quantity, amount, a));
-		list.add(Trade.sell(quantitySell, b));
-		list.add(Trade.sell(BigDecimal.ONE, c));
+		list.add(TradeWrapper.buy(quantity, amount, a));
+		list.add(TradeWrapper.sell(quantitySell, b));
+		list.add(TradeWrapper.sell(BigDecimal.ONE, c));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> opened = manager.getOpenedPositions();
@@ -144,13 +144,13 @@ public class StockManagerPRMPTest {
 	@Test
 	public void testMultiBuy1() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(3), createMoney(100), a));
-		list.add(Trade.buy(createQuantity(4), createMoney("5.17"), b));
-		list.add(Trade.sell(createQuantity(4), c));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(100), a));
+		list.add(TradeWrapper.buy(createQuantity(4), createMoney("5.17"), b));
+		list.add(TradeWrapper.sell(createQuantity(4), c));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> opened = manager.getOpenedPositions();
@@ -174,17 +174,17 @@ public class StockManagerPRMPTest {
 	@Test
 	public void testMultiBuy2() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
 		SourceTest d = new SourceTest(id++);
 		SourceTest e = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(3), createMoney(100), a));
-		list.add(Trade.buy(createQuantity(4), createMoney("5.17"), b));
-		list.add(Trade.sell(createQuantity(4), c));
-		list.add(Trade.buy(createQuantity(7), createMoney(200), d));
-		list.add(Trade.sell(createQuantity(3), e));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(100), a));
+		list.add(TradeWrapper.buy(createQuantity(4), createMoney("5.17"), b));
+		list.add(TradeWrapper.sell(createQuantity(4), c));
+		list.add(TradeWrapper.buy(createQuantity(7), createMoney(200), d));
+		list.add(TradeWrapper.sell(createQuantity(3), e));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> opened = manager.getOpenedPositions();
@@ -218,7 +218,7 @@ public class StockManagerPRMPTest {
 	@Test
 	public void testiotaFinance() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
@@ -226,13 +226,13 @@ public class StockManagerPRMPTest {
 		SourceTest e = new SourceTest(id++);
 		SourceTest f = new SourceTest(id++);
 		SourceTest g = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(100), createMoney(4500), a));
-		list.add(Trade.buy(createQuantity(80), createMoney(3608), b));
-		list.add(Trade.buy(createQuantity(70), createMoney(3136), c));
-		list.add(Trade.sell(createQuantity(70), d));
-		list.add(Trade.buy(createQuantity(25), createMoney(1105), e));
-		list.add(Trade.sell(createQuantity(35), f));
-		list.add(Trade.buy(createQuantity(40), createMoney(1802), g));
+		list.add(TradeWrapper.buy(createQuantity(100), createMoney(4500), a));
+		list.add(TradeWrapper.buy(createQuantity(80), createMoney(3608), b));
+		list.add(TradeWrapper.buy(createQuantity(70), createMoney(3136), c));
+		list.add(TradeWrapper.sell(createQuantity(70), d));
+		list.add(TradeWrapper.buy(createQuantity(25), createMoney(1105), e));
+		list.add(TradeWrapper.sell(createQuantity(35), f));
+		list.add(TradeWrapper.buy(createQuantity(40), createMoney(1802), g));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> opened = manager.getOpenedPositions();
@@ -264,12 +264,12 @@ public class StockManagerPRMPTest {
 	public void modificationSimple() {
 		StockManager manager = newStockManager();
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		BigDecimal quantity = createQuantity(3);
 		MonetaryAmount amount = createMoney(100);
 		SourceTest a = new SourceTest(id++);
-		list.add(Trade.buy(quantity, amount, a));
-		list.add(Trade.modification(createMoney(-30)));
+		list.add(TradeWrapper.buy(quantity, amount, a));
+		list.add(TradeWrapper.modification(createMoney(-30)));
 
 		manager.process(list);
 		Assert.assertTrue(manager.getClosedPositions().isEmpty());
@@ -284,15 +284,15 @@ public class StockManagerPRMPTest {
 	@Test
 	public void modification() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		BigDecimal quantity = createQuantity(3);
 		MonetaryAmount amount = createMoney(100);
 		BigDecimal quantitySell = createQuantity(2);
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
-		list.add(Trade.buy(quantity, amount, a));
-		list.add(Trade.sell(quantitySell, b));
-		list.add(Trade.modification(createMoney(-10)));
+		list.add(TradeWrapper.buy(quantity, amount, a));
+		list.add(TradeWrapper.sell(quantitySell, b));
+		list.add(TradeWrapper.modification(createMoney(-10)));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> opened = manager.getOpenedPositions();
@@ -316,17 +316,17 @@ public class StockManagerPRMPTest {
 	@Test
 	public void testFullMultiPartialSellModification() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		BigDecimal quantity = createQuantity(3);
 		MonetaryAmount amount = createMoney(100);
 		BigDecimal quantitySell = createQuantity(2);
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
-		list.add(Trade.buy(quantity, amount, a));
-		list.add(Trade.sell(quantitySell, b));
-		list.add(Trade.modification(createMoney(-10)));
-		list.add(Trade.sell(BigDecimal.ONE, c));
+		list.add(TradeWrapper.buy(quantity, amount, a));
+		list.add(TradeWrapper.sell(quantitySell, b));
+		list.add(TradeWrapper.modification(createMoney(-10)));
+		list.add(TradeWrapper.sell(BigDecimal.ONE, c));
 
 		StockManager manager = newStockManager();
 		manager.process(list);
@@ -353,18 +353,18 @@ public class StockManagerPRMPTest {
 	@Test
 	public void testModificationMultiBuy2() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
 		SourceTest d = new SourceTest(id++);
 		SourceTest e = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(3), createMoney(100), a));
-		list.add(Trade.buy(createQuantity(4), createMoney("5.17"), b));
-		list.add(Trade.sell(createQuantity(4), c));
-		list.add(Trade.modification(createMoney("-1.50")));
-		list.add(Trade.buy(createQuantity(7), createMoney(200), d));
-		list.add(Trade.sell(createQuantity(3), e));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(100), a));
+		list.add(TradeWrapper.buy(createQuantity(4), createMoney("5.17"), b));
+		list.add(TradeWrapper.sell(createQuantity(4), c));
+		list.add(TradeWrapper.modification(createMoney("-1.50")));
+		list.add(TradeWrapper.buy(createQuantity(7), createMoney(200), d));
+		list.add(TradeWrapper.sell(createQuantity(3), e));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> opened = manager.getOpenedPositions();
@@ -398,13 +398,13 @@ public class StockManagerPRMPTest {
 	@Test
 	public void testSimple2buy1OneSell() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(150), createMoney(150*100), a));
-		list.add(Trade.buy(createQuantity(200), createMoney(200*150), b));
-		list.add(Trade.sell(createQuantity(250), c));
+		list.add(TradeWrapper.buy(createQuantity(150), createMoney(150*100), a));
+		list.add(TradeWrapper.buy(createQuantity(200), createMoney(200*150), b));
+		list.add(TradeWrapper.sell(createQuantity(250), c));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> opened = manager.getOpenedPositions();
@@ -428,12 +428,12 @@ public class StockManagerPRMPTest {
 	@Test
 	public void testModification2() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(8), createMoney(100), a));
-		list.add(Trade.buy(createQuantity(3), createMoney(160), b));
-		list.add(Trade.modification(createMoney(-50)));
+		list.add(TradeWrapper.buy(createQuantity(8), createMoney(100), a));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(160), b));
+		list.add(TradeWrapper.modification(createMoney(-50)));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> openedPositions = manager.getOpenedPositions();
@@ -453,19 +453,19 @@ public class StockManagerPRMPTest {
 	@Test
 	public void testModification3() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(8), createMoney(100), a));
-		list.add(Trade.buy(createQuantity(3), createMoney(160), b));
-		list.add(Trade.buy(createQuantity(7), createMoney(90), c));
-		list.add(Trade.modification(createMoney(-79)));
+		list.add(TradeWrapper.buy(createQuantity(8), createMoney(100), a));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(160), b));
+		list.add(TradeWrapper.buy(createQuantity(7), createMoney(90), c));
+		list.add(TradeWrapper.modification(createMoney(-79)));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> openedPositions = manager.getOpenedPositions();
 		List<Position> closedPositions = manager.getClosedPositions();
-		Trade stock = manager.getStock();
+		TradeWrapper stock = manager.getStock();
 		Assert.assertTrue(closedPositions.isEmpty());
 		Assert.assertEquals(1, openedPositions.size());
 		Assert.assertEquals(createQuantity(8+3+7), stock.getQuantity());

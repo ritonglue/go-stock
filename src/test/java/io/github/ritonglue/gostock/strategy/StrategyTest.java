@@ -10,7 +10,7 @@ import javax.money.MonetaryAmountFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
-import io.github.ritonglue.gostock.StockManager.Trade;
+import io.github.ritonglue.gostock.StockManager.TradeWrapper;
 import io.github.ritonglue.gostock.StockManagerFIFOTest;
 
 public class StrategyTest {
@@ -30,19 +30,19 @@ public class StrategyTest {
 	public void testFIFO() {
 		Strategy q = new FIFOStrategy();
 		Assert.assertTrue(q.isEmpty());
-		Trade a = Trade.buy(new BigDecimal(1), createMoney(10), null);
+		TradeWrapper a = TradeWrapper.buy(new BigDecimal(1), createMoney(10), null);
 		q.add(a);
 		Assert.assertEquals(1, q.size());
 		Assert.assertEquals(a, q.peek());
 		Assert.assertEquals(new BigDecimal(1), q.getQuantity());
 
-		Trade b = Trade.buy(new BigDecimal(2), createMoney(20), null);
+		TradeWrapper b = TradeWrapper.buy(new BigDecimal(2), createMoney(20), null);
 		q.add(b);
 		Assert.assertEquals(2, q.size());
 		Assert.assertEquals(a, q.peek());
 		Assert.assertEquals(new BigDecimal(3), q.getQuantity());
 
-		Trade c = Trade.buy(new BigDecimal(3), createMoney(30), null);
+		TradeWrapper c = TradeWrapper.buy(new BigDecimal(3), createMoney(30), null);
 		q.add(c);
 		Assert.assertEquals(3, q.size());
 		Assert.assertEquals(a, q.peek());
@@ -64,19 +64,19 @@ public class StrategyTest {
 	public void testLIFO() {
 		Strategy q = new LIFOStrategy();
 		Assert.assertTrue(q.isEmpty());
-		Trade a = Trade.buy(new BigDecimal(1), createMoney(10), null);
+		TradeWrapper a = TradeWrapper.buy(new BigDecimal(1), createMoney(10), null);
 		q.add(a);
 		Assert.assertEquals(1, q.size());
 		Assert.assertEquals(a, q.peek());
 		Assert.assertEquals(new BigDecimal(1), q.getQuantity());
 
-		Trade b = Trade.buy(new BigDecimal(2), createMoney(20), null);
+		TradeWrapper b = TradeWrapper.buy(new BigDecimal(2), createMoney(20), null);
 		q.add(b);
 		Assert.assertEquals(2, q.size());
 		Assert.assertEquals(b, q.peek());
 		Assert.assertEquals(new BigDecimal(3), q.getQuantity());
 
-		Trade c = Trade.buy(new BigDecimal(3), createMoney(30), null);
+		TradeWrapper c = TradeWrapper.buy(new BigDecimal(3), createMoney(30), null);
 		q.add(c);
 		Assert.assertEquals(3, q.size());
 		Assert.assertEquals(c, q.peek());
@@ -98,19 +98,19 @@ public class StrategyTest {
 	public void testPRMP() {
 		Strategy q = new PRMPStrategy();
 		Assert.assertTrue(q.isEmpty());
-		Trade a = Trade.buy(new BigDecimal(1), createMoney(10), null);
+		TradeWrapper a = TradeWrapper.buy(new BigDecimal(1), createMoney(10), null);
 		q.add(a);
 		Assert.assertEquals(1, q.size());
 		Assert.assertEquals(new BigDecimal(1), q.getQuantity());
 		Assert.assertEquals(new BigDecimal(1), q.peek().getQuantity());
 
-		Trade b = Trade.buy(new BigDecimal(2), createMoney(20), null);
+		TradeWrapper b = TradeWrapper.buy(new BigDecimal(2), createMoney(20), null);
 		q.add(b);
 		Assert.assertEquals(1, q.size());
 		Assert.assertEquals(new BigDecimal(3), q.peek().getQuantity());
 		Assert.assertEquals(new BigDecimal(3), q.getQuantity());
 
-		Trade c = Trade.buy(new BigDecimal(3), createMoney(30), null);
+		TradeWrapper c = TradeWrapper.buy(new BigDecimal(3), createMoney(30), null);
 		q.add(c);
 		Assert.assertEquals(1, q.size());
 		Assert.assertEquals(new BigDecimal(6), q.peek().getQuantity());

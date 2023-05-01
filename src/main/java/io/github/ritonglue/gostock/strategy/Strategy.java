@@ -5,12 +5,12 @@ import java.util.Iterator;
 
 import javax.money.MonetaryAmount;
 
-import io.github.ritonglue.gostock.StockManager.Trade;
+import io.github.ritonglue.gostock.StockManager.TradeWrapper;
 
-public interface Strategy extends Iterable<Trade> {
-	boolean add(Trade t);
-	Trade peek();
-	Trade remove();
+public interface Strategy extends Iterable<TradeWrapper> {
+	boolean add(TradeWrapper t);
+	TradeWrapper peek();
+	TradeWrapper remove();
 	boolean isEmpty();
 	void clear();
 	int size();
@@ -19,10 +19,10 @@ public interface Strategy extends Iterable<Trade> {
 	 * @return the quantity in stock
 	 */
 	default BigDecimal getQuantity() {
-		Iterator<Trade> iterator = this.iterator();
+		Iterator<TradeWrapper> iterator = this.iterator();
 		BigDecimal quantity = BigDecimal.ZERO;
 		while(iterator.hasNext()) {
-			Trade tmp = iterator.next();
+			TradeWrapper tmp = iterator.next();
 			quantity = quantity.add(tmp.getQuantity());
 		}
 		return quantity;
@@ -31,21 +31,21 @@ public interface Strategy extends Iterable<Trade> {
 	/**
 	 * @return the quantity and buy value amount
 	 */
-	default Trade getStock() {
-		Iterator<Trade> iterator = this.iterator();
+	default TradeWrapper getStock() {
+		Iterator<TradeWrapper> iterator = this.iterator();
 		BigDecimal quantity = BigDecimal.ZERO;
 		//if stock is empty, amount is null : missing currency.
 		MonetaryAmount amount = null;
 		if(iterator.hasNext()) {
-			Trade tmp = iterator.next();
+			TradeWrapper tmp = iterator.next();
 			quantity = tmp.getQuantity();
 			amount = tmp.getAmount();
 		}
 		while(iterator.hasNext()) {
-			Trade tmp = iterator.next();
+			TradeWrapper tmp = iterator.next();
 			quantity = quantity.add(tmp.getQuantity());
 			amount = amount.add(tmp.getAmount());
 		}
-		return Trade.buy(quantity, amount, null);
+		return TradeWrapper.buy(quantity, amount, null);
 	}
 }

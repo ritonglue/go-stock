@@ -52,7 +52,7 @@ public class StockManager {
 	public List<Position> getOpenedPositions() {
 		List<Position> openedPositions = new ArrayList<>();
 		Strategy strategy = this.getStrategy();
-		for(Trade t : strategy) {
+		for(TradeWrapper t : strategy) {
 			Position position = new Position(t.getSource(), t.getQuantity(), t.getAmount());
 			openedPositions.add(position);
 		}
@@ -66,13 +66,13 @@ public class StockManager {
 	/**
 	 * @param trades in ascending time order
 	 */
-	public void process(Iterable<Trade> trades) {
-		for(Trade t : trades) {
+	public void process(Iterable<TradeWrapper> trades) {
+		for(TradeWrapper t : trades) {
 			add(t);
 		}
 	}
 
-	public void add(Trade trade) {
+	public void add(TradeWrapper trade) {
 		if(trade == null) return;
 		TradeType type = trade.getTradeType();
 		switch(type) {
@@ -91,7 +91,7 @@ public class StockManager {
 		}
 	}
 
-	private void reimbursement(Trade trade) {
+	private void reimbursement(TradeWrapper trade) {
 		if(trade.getTradeType() != TradeType.RBT) return;
 		BigDecimal quantity = trade.getQuantity();
 		if(quantity == null) {
@@ -102,17 +102,17 @@ public class StockManager {
 		sell(trade);
 	}
 
-	private void modification(Trade t) {
+	private void modification(TradeWrapper t) {
 		if(t.getTradeType() != TradeType.MODIFICATION) return;
 		Strategy strategy = this.getStrategy();
 		MonetaryAmount modificationAmount = t.getAmount();
-		Iterator<Trade> iter = strategy.iterator();
+		Iterator<TradeWrapper> iter = strategy.iterator();
 		if(strategy.size() == 1) {
 			//easy case
-			Trade tmp = iter.next();
+			TradeWrapper tmp = iter.next();
 			tmp.setAmount(tmp.getAmount().add(modificationAmount));
 		} else {
-			Trade tmp = iter.next();
+			TradeWrapper tmp = iter.next();
 			MonetaryAmount stockAmount = tmp.getAmount();
 			MonetaryAmount stockAmountAbs = stockAmount.abs();
 			BigDecimal stockQuantity = tmp.getQuantity();
@@ -137,9 +137,9 @@ public class StockManager {
 		}
 	}
 	
-	private void modification(MonetaryAmount modificationAmount, BigDecimal stockQuantity, Iterator<Trade> iterator) {
+	private void modification(MonetaryAmount modificationAmount, BigDecimal stockQuantity, Iterator<TradeWrapper> iterator) {
 		if(!iterator.hasNext()) return;
-		Trade tmp = iterator.next();
+		TradeWrapper tmp = iterator.next();
 		//proportion by quantity
 		MonetaryAmount amount = tmp.getAmount();
 		BigDecimal quantity = tmp.getQuantity();
@@ -161,9 +161,9 @@ public class StockManager {
 		}
 	}
 
-	private void modification(MonetaryAmount modificationAmount, MonetaryAmount stockAmountAbs, MonetaryAmount stockAmount, Iterator<Trade> iterator) {
+	private void modification(MonetaryAmount modificationAmount, MonetaryAmount stockAmountAbs, MonetaryAmount stockAmount, Iterator<TradeWrapper> iterator) {
 		if(!iterator.hasNext()) return;
-		Trade tmp = iterator.next();
+		TradeWrapper tmp = iterator.next();
 		//proportion by amount
 		MonetaryAmount amount = tmp.getAmount();
 		MonetaryAmount amountAbs = amount.abs();
@@ -180,11 +180,11 @@ public class StockManager {
 		}
 	}
 
-	public Trade getStock() {
+	public TradeWrapper getStock() {
 		return getStrategy().getStock();
 	}
 
-	private void sell(Trade sell) {
+	private void sell(TradeWrapper sell) {
 		CloseCause closeCause = null;
 		switch(sell.getTradeType()) {
 		case SELL:
@@ -203,7 +203,7 @@ public class StockManager {
 		BigDecimal sellQuantity = sell.getQuantity();
 		if(sellQuantity.signum() <= 0) return;
 
-		Trade buy = strategy.peek();
+		TradeWrapper buy = strategy.peek();
 		final BigDecimal stockQuantity = buy.getQuantity();
 		final MonetaryAmount stockAmount = buy.getAmount();
 		CurrencyUnit currency = stockAmount.getCurrency();
@@ -247,14 +247,14 @@ public class StockManager {
 		sell.addBuyValues(buy);
 	}
 
-	public static class Trade implements Serializable {
+	public static class TradeWrapper implements Serializable {
 		private static final long serialVersionUID = 1L;
 
 		private BigDecimal quantity;
 		private MonetaryAmount amount;
 		private final TradeType tradeType;
 		private final Object source;
-		private final List<Trade> buyValues;
+		private final List<TradeWrapper> buyValues;
 		
 		public static class Builder {
 			private BigDecimal quantity;
@@ -267,8 +267,8 @@ public class StockManager {
 			public Builder tradeType(TradeType tradeType) {this.tradeType = tradeType; return this;}
 			public Builder source(Object source) {this.source = source; return this;}
 
-			private Trade build() {
-				List<Trade> buyValues = null;
+			private TradeWrapper build() {
+				List<TradeWrapper> buyValues = null;
 				switch(tradeType) {
 					case BUY:
 						buyValues = Collections.emptyList();
@@ -291,7 +291,7 @@ public class StockManager {
 						amount = null;
 						break;
 				}
-				return new Trade(quantity, amount, tradeType, source, buyValues);
+				return new TradeWrapper(quantity, amount, tradeType, source, buyValues);
 			}
 		}
 
@@ -299,7 +299,7 @@ public class StockManager {
 			return new Builder().tradeType(tradeType);
 		}
 
-		private Trade(BigDecimal quantity, MonetaryAmount amount, TradeType tradeType, Object source, List<Trade> buyValues) {
+		private TradeWrapper(BigDecimal quantity, MonetaryAmount amount, TradeType tradeType, Object source, List<TradeWrapper> buyValues) {
 			this.quantity = quantity;
 			this.amount = amount;
 			this.tradeType = tradeType;
@@ -307,7 +307,7 @@ public class StockManager {
 			this.buyValues = buyValues;
 		}
 		
-		public static Trade buy(BigDecimal quantity, MonetaryAmount amount, Object source) {
+		public static TradeWrapper buy(BigDecimal quantity, MonetaryAmount amount, Object source) {
 			return tradeType(TradeType.BUY).amount(amount).quantity(quantity).source(source).build();
 		}
 
@@ -318,11 +318,11 @@ public class StockManager {
 		 * @param source
 		 * @return same as buy(quantity, unitAmount.multiply(quantity), source)
 		 */
-		public static Trade buyUnitAmount(BigDecimal quantity, MonetaryAmount unitAmount, Object source) {
+		public static TradeWrapper buyUnitAmount(BigDecimal quantity, MonetaryAmount unitAmount, Object source) {
 			return buy(quantity, unitAmount.multiply(quantity), source);
 		}
 
-		public static Trade sell(BigDecimal quantity, Object source) {
+		public static TradeWrapper sell(BigDecimal quantity, Object source) {
 			return tradeType(TradeType.SELL).quantity(quantity).source(source).build();
 		}
 
@@ -330,15 +330,15 @@ public class StockManager {
 		 * @param amount. Can be negative or positive
 		 * @return
 		 */
-		public static Trade modification(MonetaryAmount amount) {
+		public static TradeWrapper modification(MonetaryAmount amount) {
 			return tradeType(TradeType.MODIFICATION).amount(amount).build();
 		}
 
-		public static Trade reimbursement(BigDecimal quantity, Object source) {
+		public static TradeWrapper reimbursement(BigDecimal quantity, Object source) {
 			return tradeType(TradeType.RBT).quantity(quantity).source(source).build();
 		}
 
-		public static Trade reimbursement(Object source) {
+		public static TradeWrapper reimbursement(Object source) {
 			return reimbursement(null, source);
 		}
 
@@ -372,11 +372,11 @@ public class StockManager {
 			this.amount = amount;
 		}
 
-		public List<Trade> getBuyValues() {
+		public List<TradeWrapper> getBuyValues() {
 			return buyValues;
 		}
 		
-		public void addBuyValues(Trade t) {
+		public void addBuyValues(TradeWrapper t) {
 			this.buyValues.add(t);
 		}
 	}

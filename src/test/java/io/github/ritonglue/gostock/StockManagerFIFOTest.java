@@ -14,7 +14,7 @@ import javax.money.MonetaryAmountFactory;
 import org.junit.Assert;
 import org.junit.Test;
 
-import io.github.ritonglue.gostock.StockManager.Trade;
+import io.github.ritonglue.gostock.StockManager.TradeWrapper;
 
 public class StockManagerFIFOTest {
 	private final CurrencyUnit cu = Monetary.getCurrency("EUR");
@@ -61,11 +61,11 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testOneBuy() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		BigDecimal quantity = createQuantity("3");
 		MonetaryAmount amount = createMoney("100.00");
 		SourceTest a = new SourceTest(id++);
-		list.add(Trade.buy(quantity, amount, a));
+		list.add(TradeWrapper.buy(quantity, amount, a));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		Assert.assertTrue(manager.getClosedPositions().isEmpty());
@@ -82,13 +82,13 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testOneFullSell() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		BigDecimal quantity = createQuantity("3");
 		MonetaryAmount amount = createMoney("100.00");
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
-		list.add(Trade.buy(quantity, amount, a));
-		list.add(Trade.sell(quantity, b));
+		list.add(TradeWrapper.buy(quantity, amount, a));
+		list.add(TradeWrapper.sell(quantity, b));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		Assert.assertTrue(manager.getOpenedPositions().isEmpty());
@@ -103,7 +103,7 @@ public class StockManagerFIFOTest {
 		SourceTest sell = position.getSell(SourceTest.class);
 		Assert.assertEquals(b, sell);
 
-		List<Trade> buyValues = list.get(1).getBuyValues();
+		List<TradeWrapper> buyValues = list.get(1).getBuyValues();
 		Assert.assertEquals(1, buyValues.size());
 		Assert.assertEquals(a, buyValues.get(0).getSource());
 	}
@@ -111,14 +111,14 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testOnePartialSell() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		BigDecimal quantity = createQuantity("3");
 		MonetaryAmount amount = createMoney("100.00");
 		BigDecimal quantitySell = createQuantity("2");
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
-		list.add(Trade.buy(quantity, amount, a));
-		list.add(Trade.sell(quantitySell, b));
+		list.add(TradeWrapper.buy(quantity, amount, a));
+		list.add(TradeWrapper.sell(quantitySell, b));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> opened = manager.getOpenedPositions();
@@ -142,7 +142,7 @@ public class StockManagerFIFOTest {
 		SourceTest sell = position.getSell(SourceTest.class);
 		Assert.assertEquals(b, sell);
 
-		List<Trade> buyValues = list.get(1).getBuyValues();
+		List<TradeWrapper> buyValues = list.get(1).getBuyValues();
 		Assert.assertEquals(1, buyValues.size());
 		Assert.assertEquals(a, buyValues.get(0).getSource());
 	}
@@ -150,16 +150,16 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testFullMultiPartialSell() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		BigDecimal quantity = createQuantity("3");
 		MonetaryAmount amount = createMoney("100.00");
 		BigDecimal quantitySell = createQuantity("2");
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
-		list.add(Trade.buy(quantity, amount, a));
-		list.add(Trade.sell(quantitySell, b));
-		list.add(Trade.sell(BigDecimal.ONE, c));
+		list.add(TradeWrapper.buy(quantity, amount, a));
+		list.add(TradeWrapper.sell(quantitySell, b));
+		list.add(TradeWrapper.sell(BigDecimal.ONE, c));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> opened = manager.getOpenedPositions();
@@ -185,7 +185,7 @@ public class StockManagerFIFOTest {
 		sell = position.getSell(SourceTest.class);
 		Assert.assertEquals(c, sell);
 
-		List<Trade> buyValues = list.get(1).getBuyValues();
+		List<TradeWrapper> buyValues = list.get(1).getBuyValues();
 		Assert.assertEquals(1, buyValues.size());
 		Assert.assertEquals(a, buyValues.get(0).getSource());
 
@@ -197,13 +197,13 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testMultiBuy1() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(3), createMoney("100.00"), a));
-		list.add(Trade.buy(createQuantity(4), createMoney("5.17"), b));
-		list.add(Trade.sell(createQuantity(4), c));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney("100.00"), a));
+		list.add(TradeWrapper.buy(createQuantity(4), createMoney("5.17"), b));
+		list.add(TradeWrapper.sell(createQuantity(4), c));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> opened = manager.getOpenedPositions();
@@ -236,7 +236,7 @@ public class StockManagerFIFOTest {
 		buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(b, buy);
 
-		List<Trade> buyValues = list.get(2).getBuyValues();
+		List<TradeWrapper> buyValues = list.get(2).getBuyValues();
 		Assert.assertEquals(2, buyValues.size());
 		Assert.assertEquals(b, buyValues.get(0).getSource());
 		Assert.assertEquals(a, buyValues.get(1).getSource());
@@ -245,17 +245,17 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testMultiBuy2() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
 		SourceTest d = new SourceTest(id++);
 		SourceTest e = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(3), createMoney(100), a));
-		list.add(Trade.buy(createQuantity(4), createMoney("5.17"), b));
-		list.add(Trade.sell(createQuantity(4), c));
-		list.add(Trade.buy(createQuantity(7), createMoney(200), d));
-		list.add(Trade.sell(createQuantity(3), e));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(100), a));
+		list.add(TradeWrapper.buy(createQuantity(4), createMoney("5.17"), b));
+		list.add(TradeWrapper.sell(createQuantity(4), c));
+		list.add(TradeWrapper.buy(createQuantity(7), createMoney(200), d));
+		list.add(TradeWrapper.sell(createQuantity(3), e));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> opened = manager.getOpenedPositions();
@@ -297,7 +297,7 @@ public class StockManagerFIFOTest {
 		buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(d, buy);
 
-		List<Trade> buyValues = list.get(2).getBuyValues();
+		List<TradeWrapper> buyValues = list.get(2).getBuyValues();
 		Assert.assertEquals(2, buyValues.size());
 		Assert.assertEquals(b, buyValues.get(0).getSource());
 		Assert.assertEquals(a, buyValues.get(1).getSource());
@@ -310,19 +310,19 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testMultiBuy3() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
 		SourceTest d = new SourceTest(id++);
 		SourceTest e = new SourceTest(id++);
 		SourceTest f = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(3), createMoney(100), a));
-		list.add(Trade.buy(createQuantity(4), createMoney("5.17"), b));
-		list.add(Trade.sell(createQuantity(4), c));//closes 3 + 1
-		list.add(Trade.buy(createQuantity(7), createMoney(200), d));
-		list.add(Trade.sell(createQuantity(9), e));//closes 3 + 6. 1 stays opened
-		list.add(Trade.buy(createQuantity(2), createMoney("33.33"), f));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(100), a));
+		list.add(TradeWrapper.buy(createQuantity(4), createMoney("5.17"), b));
+		list.add(TradeWrapper.sell(createQuantity(4), c));//closes 3 + 1
+		list.add(TradeWrapper.buy(createQuantity(7), createMoney(200), d));
+		list.add(TradeWrapper.sell(createQuantity(9), e));//closes 3 + 6. 1 stays opened
+		list.add(TradeWrapper.buy(createQuantity(2), createMoney("33.33"), f));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> opened = manager.getOpenedPositions();
@@ -380,7 +380,7 @@ public class StockManagerFIFOTest {
 		buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(f, buy);
 
-		List<Trade> buyValues = list.get(2).getBuyValues();
+		List<TradeWrapper> buyValues = list.get(2).getBuyValues();
 		Assert.assertEquals(2, buyValues.size());
 		Assert.assertEquals(b, buyValues.get(0).getSource());
 		Assert.assertEquals(a, buyValues.get(1).getSource());
@@ -394,7 +394,7 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testMultiBuy4() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
@@ -402,13 +402,13 @@ public class StockManagerFIFOTest {
 		SourceTest e = new SourceTest(id++);
 		SourceTest f = new SourceTest(id++);
 		SourceTest g = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(3), createMoney(100), a));
-		list.add(Trade.buy(createQuantity(4), createMoney("5.17"), b));
-		list.add(Trade.sell(createQuantity(4), c));//closes 3 + 1; 3 stays opened
-		list.add(Trade.buy(createQuantity(7), createMoney(200), d));
-		list.add(Trade.sell(createQuantity(9), e));//closes 3 + 6. 1 stays opened
-		list.add(Trade.buy(createQuantity(2), createMoney("33.33"), f));
-		list.add(Trade.sell(createQuantity(3), g));//closes 1 + 2
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(100), a));
+		list.add(TradeWrapper.buy(createQuantity(4), createMoney("5.17"), b));
+		list.add(TradeWrapper.sell(createQuantity(4), c));//closes 3 + 1; 3 stays opened
+		list.add(TradeWrapper.buy(createQuantity(7), createMoney(200), d));
+		list.add(TradeWrapper.sell(createQuantity(9), e));//closes 3 + 6. 1 stays opened
+		list.add(TradeWrapper.buy(createQuantity(2), createMoney("33.33"), f));
+		list.add(TradeWrapper.sell(createQuantity(3), g));//closes 1 + 2
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> opened = manager.getOpenedPositions();
@@ -475,12 +475,12 @@ public class StockManagerFIFOTest {
 	public void modificationSimple() {
 		StockManager manager = newStockManager();
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		BigDecimal quantity = createQuantity(3);
 		MonetaryAmount amount = createMoney(100);
 		SourceTest a = new SourceTest(id++);
-		list.add(Trade.buy(quantity, amount, a));
-		list.add(Trade.modification(createMoney(-30)));
+		list.add(TradeWrapper.buy(quantity, amount, a));
+		list.add(TradeWrapper.modification(createMoney(-30)));
 
 		manager.process(list);
 		Assert.assertTrue(manager.getClosedPositions().isEmpty());
@@ -497,15 +497,15 @@ public class StockManagerFIFOTest {
 	@Test
 	public void modification() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		BigDecimal quantity = createQuantity(3);
 		MonetaryAmount amount = createMoney(100);
 		BigDecimal quantitySell = createQuantity(2);
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
-		list.add(Trade.buy(quantity, amount, a));
-		list.add(Trade.sell(quantitySell, b));
-		list.add(Trade.modification(createMoney(-10)));
+		list.add(TradeWrapper.buy(quantity, amount, a));
+		list.add(TradeWrapper.sell(quantitySell, b));
+		list.add(TradeWrapper.modification(createMoney(-10)));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> opened = manager.getOpenedPositions();
@@ -533,17 +533,17 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testFullMultiPartialSellModification() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		BigDecimal quantity = createQuantity(3);
 		MonetaryAmount amount = createMoney(100);
 		BigDecimal quantitySell = createQuantity(2);
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
-		list.add(Trade.buy(quantity, amount, a));
-		list.add(Trade.sell(quantitySell, b));
-		list.add(Trade.modification(createMoney(-10)));
-		list.add(Trade.sell(BigDecimal.ONE, c));
+		list.add(TradeWrapper.buy(quantity, amount, a));
+		list.add(TradeWrapper.sell(quantitySell, b));
+		list.add(TradeWrapper.modification(createMoney(-10)));
+		list.add(TradeWrapper.sell(BigDecimal.ONE, c));
 
 		StockManager manager = newStockManager();
 		manager.process(list);
@@ -574,18 +574,18 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testModificationMultiBuy2() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
 		SourceTest d = new SourceTest(id++);
 		SourceTest e = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(3), createMoney(100), a));
-		list.add(Trade.buy(createQuantity(4), createMoney("5.17"), b));
-		list.add(Trade.sell(createQuantity(4), c));
-		list.add(Trade.modification(createMoney("-1.50")));
-		list.add(Trade.buy(createQuantity(7), createMoney(200), d));
-		list.add(Trade.sell(createQuantity(3), e));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(100), a));
+		list.add(TradeWrapper.buy(createQuantity(4), createMoney("5.17"), b));
+		list.add(TradeWrapper.sell(createQuantity(4), c));
+		list.add(TradeWrapper.modification(createMoney("-1.50")));
+		list.add(TradeWrapper.buy(createQuantity(7), createMoney(200), d));
+		list.add(TradeWrapper.sell(createQuantity(3), e));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> opened = manager.getOpenedPositions();
@@ -634,13 +634,13 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testSimple2buy1OneSell() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(150), createMoney(150*100), a));
-		list.add(Trade.buy(createQuantity(200), createMoney(200*150), b));
-		list.add(Trade.sell(createQuantity(250), c));
+		list.add(TradeWrapper.buy(createQuantity(150), createMoney(150*100), a));
+		list.add(TradeWrapper.buy(createQuantity(200), createMoney(200*150), b));
+		list.add(TradeWrapper.sell(createQuantity(250), c));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> opened = manager.getOpenedPositions();
@@ -677,11 +677,11 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testSimpleRbt() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(7), createMoney(100), a));
-		list.add(Trade.reimbursement(createQuantity(7), b));
+		list.add(TradeWrapper.buy(createQuantity(7), createMoney(100), a));
+		list.add(TradeWrapper.reimbursement(createQuantity(7), b));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> openedPositions = manager.getOpenedPositions();
@@ -696,7 +696,7 @@ public class StockManagerFIFOTest {
 		SourceTest buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(a, buy);
 
-		List<Trade> buyValues = list.get(1).getBuyValues();
+		List<TradeWrapper> buyValues = list.get(1).getBuyValues();
 		Assert.assertEquals(1, buyValues.size());
 		Assert.assertEquals(a, buyValues.get(0).getSource());
 	}
@@ -704,11 +704,11 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testSimpleRbtNullQuantity() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(7), createMoney(100), a));
-		list.add(Trade.reimbursement(b));
+		list.add(TradeWrapper.buy(createQuantity(7), createMoney(100), a));
+		list.add(TradeWrapper.reimbursement(b));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> openedPositions = manager.getOpenedPositions();
@@ -725,7 +725,7 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(a, buy);
 		Assert.assertEquals(b, sell);
 
-		List<Trade> buyValues = list.get(1).getBuyValues();
+		List<TradeWrapper> buyValues = list.get(1).getBuyValues();
 		Assert.assertEquals(1, buyValues.size());
 		Assert.assertEquals(a, buyValues.get(0).getSource());
 	}
@@ -733,13 +733,13 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testBuySellRbt() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(7), createMoney(100), a));
-		list.add(Trade.sell(createQuantity(3), b));
-		list.add(Trade.reimbursement(c));
+		list.add(TradeWrapper.buy(createQuantity(7), createMoney(100), a));
+		list.add(TradeWrapper.sell(createQuantity(3), b));
+		list.add(TradeWrapper.reimbursement(c));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> openedPositions = manager.getOpenedPositions();
@@ -767,7 +767,7 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(a, buy);
 		Assert.assertEquals(c, sell);
 
-		List<Trade> buyValues = list.get(1).getBuyValues();
+		List<TradeWrapper> buyValues = list.get(1).getBuyValues();
 		Assert.assertEquals(1, buyValues.size());
 		Assert.assertEquals(a, buyValues.get(0).getSource());
 	}
@@ -775,15 +775,15 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testBuySellBuyRbt() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
 		SourceTest d = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(7), createMoney(100), a));
-		list.add(Trade.sell(createQuantity(3), b));
-		list.add(Trade.buy(createQuantity(3), createMoney(160), c));
-		list.add(Trade.reimbursement(d));
+		list.add(TradeWrapper.buy(createQuantity(7), createMoney(100), a));
+		list.add(TradeWrapper.sell(createQuantity(3), b));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(160), c));
+		list.add(TradeWrapper.reimbursement(d));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> openedPositions = manager.getOpenedPositions();
@@ -821,7 +821,7 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(c, buy);
 		Assert.assertEquals(d, sell);
 
-		List<Trade> buyValues = list.get(1).getBuyValues();
+		List<TradeWrapper> buyValues = list.get(1).getBuyValues();
 		Assert.assertEquals(1, buyValues.size());
 		Assert.assertEquals(a, buyValues.get(0).getSource());
 
@@ -834,12 +834,12 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testModification2() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(8), createMoney(100), a));
-		list.add(Trade.buy(createQuantity(3), createMoney(160), b));
-		list.add(Trade.modification(createMoney(-50)));
+		list.add(TradeWrapper.buy(createQuantity(8), createMoney(100), a));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(160), b));
+		list.add(TradeWrapper.modification(createMoney(-50)));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> openedPositions = manager.getOpenedPositions();
@@ -868,19 +868,19 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testModification3() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
 		SourceTest c = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(8), createMoney(100), a));
-		list.add(Trade.buy(createQuantity(3), createMoney(160), b));
-		list.add(Trade.buy(createQuantity(7), createMoney(90), c));
-		list.add(Trade.modification(createMoney(-79)));
+		list.add(TradeWrapper.buy(createQuantity(8), createMoney(100), a));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(160), b));
+		list.add(TradeWrapper.buy(createQuantity(7), createMoney(90), c));
+		list.add(TradeWrapper.modification(createMoney(-79)));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> openedPositions = manager.getOpenedPositions();
 		List<Position> closedPositions = manager.getClosedPositions();
-		Trade stock = manager.getStock();
+		TradeWrapper stock = manager.getStock();
 		Assert.assertTrue(closedPositions.isEmpty());
 		Assert.assertEquals(3, openedPositions.size());
 		Assert.assertEquals(createQuantity(8+3+7), stock.getQuantity());
@@ -917,11 +917,11 @@ public class StockManagerFIFOTest {
 		List<Position> closedPositions = manager.getClosedPositions();
 		Assert.assertTrue(openedPositions.isEmpty());
 		Assert.assertTrue(closedPositions.isEmpty());
-		Trade stock = manager.getStock();
+		TradeWrapper stock = manager.getStock();
 		Assert.assertEquals(createQuantity(0), stock.getQuantity());
 		Assert.assertNull(stock.getAmount());
 
-		manager.add(Trade.buy(createQuantity(3), createMoney(100), a));
+		manager.add(TradeWrapper.buy(createQuantity(3), createMoney(100), a));
 		openedPositions = manager.getOpenedPositions();
 		closedPositions = manager.getClosedPositions();
 		stock = manager.getStock();
@@ -933,7 +933,7 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(createMoney(100), openedPositions.get(0).getAmount());
 
 		SourceTest b = new SourceTest(id++);
-		manager.add(Trade.buy(createQuantity(9), createMoney(50), b));
+		manager.add(TradeWrapper.buy(createQuantity(9), createMoney(50), b));
 		openedPositions = manager.getOpenedPositions();
 		closedPositions = manager.getClosedPositions();
 		stock = manager.getStock();
@@ -949,7 +949,7 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(b, openedPositions.get(1).getBuy());
 
 		SourceTest c = new SourceTest(id++);
-		manager.add(Trade.sell(createQuantity(4), c));
+		manager.add(TradeWrapper.sell(createQuantity(4), c));
 		openedPositions = manager.getOpenedPositions();
 		closedPositions = manager.getClosedPositions();
 		stock = manager.getStock();
@@ -972,7 +972,7 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(c, closedPositions.get(1).getSell());
 
 		SourceTest d = new SourceTest(id++);
-		manager.add(Trade.buy(createQuantity(4), createMoney(77), d));
+		manager.add(TradeWrapper.buy(createQuantity(4), createMoney(77), d));
 		openedPositions = manager.getOpenedPositions();
 		closedPositions = manager.getClosedPositions();
 		stock = manager.getStock();
@@ -987,7 +987,7 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(createQuantity(4), openedPositions.get(1).getQuantity());
 		Assert.assertEquals(createMoney(77), openedPositions.get(1).getAmount());
 
-		manager.add(Trade.modification(createMoney(-100)));
+		manager.add(TradeWrapper.modification(createMoney(-100)));
 		stock = manager.getStock();
 		openedPositions = manager.getOpenedPositions();
 		closedPositions = manager.getClosedPositions();
@@ -1003,7 +1003,7 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(createMoney("13.59"), openedPositions.get(1).getAmount());
 
 		SourceTest e = new SourceTest(id++);
-		manager.add(Trade.sell(createQuantity(12), e));
+		manager.add(TradeWrapper.sell(createQuantity(12), e));
 		stock = manager.getStock();
 		openedPositions = manager.getOpenedPositions();
 		closedPositions = manager.getClosedPositions();
@@ -1021,15 +1021,15 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testNullAmountSingleModification() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(8), createMoney(0), a));
-		list.add(Trade.modification(createMoney(-50)));
+		list.add(TradeWrapper.buy(createQuantity(8), createMoney(0), a));
+		list.add(TradeWrapper.modification(createMoney(-50)));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> openedPositions = manager.getOpenedPositions();
 		List<Position> closedPositions = manager.getClosedPositions();
-		Trade stock = manager.getStock();
+		TradeWrapper stock = manager.getStock();
 		Assert.assertTrue(closedPositions.isEmpty());
 		Assert.assertEquals(1, openedPositions.size());
 		Assert.assertEquals(createMoney(-50), stock.getAmount());
@@ -1045,17 +1045,17 @@ public class StockManagerFIFOTest {
 	@Test
 	public void testNullAmountModification() {
 		int id = 1;
-		List<Trade> list = new ArrayList<>();
+		List<TradeWrapper> list = new ArrayList<>();
 		SourceTest a = new SourceTest(id++);
 		SourceTest b = new SourceTest(id++);
-		list.add(Trade.buy(createQuantity(8), createMoney(0), a));
-		list.add(Trade.buy(createQuantity(3), createMoney(0), b));
-		list.add(Trade.modification(createMoney(+50)));
+		list.add(TradeWrapper.buy(createQuantity(8), createMoney(0), a));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(0), b));
+		list.add(TradeWrapper.modification(createMoney(+50)));
 		StockManager manager = newStockManager();
 		manager.process(list);
 		List<Position> openedPositions = manager.getOpenedPositions();
 		List<Position> closedPositions = manager.getClosedPositions();
-		Trade stock = manager.getStock();
+		TradeWrapper stock = manager.getStock();
 		Assert.assertTrue(closedPositions.isEmpty());
 		Assert.assertEquals(2, openedPositions.size());
 		Assert.assertEquals(createMoney(50), stock.getAmount());

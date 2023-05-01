@@ -7,21 +7,21 @@ import java.util.List;
 
 import javax.money.MonetaryAmount;
 
-import io.github.ritonglue.gostock.StockManager.Trade;
+import io.github.ritonglue.gostock.StockManager.TradeWrapper;
 
 public final class PRMPStrategy implements Strategy {
 	private MonetaryAmount buyValue;
 	private BigDecimal buyQuantity = BigDecimal.ZERO;
 
-	private Trade stock;
+	private TradeWrapper stock;
 
 	@Override
-	public Iterator<Trade> iterator() {
+	public Iterator<TradeWrapper> iterator() {
 		return isEmpty() ? Collections.emptyIterator() :  List.of(stock).iterator();
 	}
 
 	@Override
-	public boolean add(Trade t) {
+	public boolean add(TradeWrapper t) {
 		if(buyValue == null) {
 			buyValue = t.getAmount();
 			buyQuantity = t.getQuantity();
@@ -29,7 +29,7 @@ public final class PRMPStrategy implements Strategy {
 			buyValue = stock.getAmount().add(t.getAmount());
 			buyQuantity = stock.getQuantity().add(t.getQuantity());
 		}
-		stock = Trade.buy(buyQuantity, buyValue, null);
+		stock = TradeWrapper.buy(buyQuantity, buyValue, null);
 		return true;
 	}
 
@@ -39,17 +39,17 @@ public final class PRMPStrategy implements Strategy {
 	}
 
 	@Override
-	public Trade getStock() {
-		return stock == null ? Trade.buy(BigDecimal.ZERO, null, null) : stock;
+	public TradeWrapper getStock() {
+		return stock == null ? TradeWrapper.buy(BigDecimal.ZERO, null, null) : stock;
 	}
 
 	@Override
-	public Trade peek() {
+	public TradeWrapper peek() {
 		return getStock();
 	}
 
 	@Override
-	public Trade remove() {
+	public TradeWrapper remove() {
 		buyQuantity = BigDecimal.ZERO;
 		buyValue = null;
 		stock = null;
@@ -58,7 +58,7 @@ public final class PRMPStrategy implements Strategy {
 
 	@Override
 	public boolean isEmpty() {
-		Trade stock = getStock();
+		TradeWrapper stock = getStock();
 		return stock == null || stock.getQuantity().signum() == 0;
 	}
 

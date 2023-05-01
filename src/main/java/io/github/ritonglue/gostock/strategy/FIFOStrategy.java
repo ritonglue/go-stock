@@ -3,13 +3,13 @@ package io.github.ritonglue.gostock.strategy;
 import java.util.LinkedList;
 import java.util.Queue;
 
-import io.github.ritonglue.gostock.StockManager.Trade;
+import io.github.ritonglue.gostock.StockManager.TradeWrapper;
 
 public final class FIFOStrategy extends QueueStrategy {
-	private final Queue<Trade> queue = new LinkedList<>();
+	private final Queue<TradeWrapper> queue = new LinkedList<>();
 
 	@Override
-	public Queue<Trade> getQueue() {
+	public Queue<TradeWrapper> getQueue() {
 		return queue;
 	}
 }

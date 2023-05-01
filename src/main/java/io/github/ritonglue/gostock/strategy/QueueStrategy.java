@@ -3,19 +3,19 @@ package io.github.ritonglue.gostock.strategy;
 import java.util.Iterator;
 import java.util.Queue;
 
-import io.github.ritonglue.gostock.StockManager.Trade;
+import io.github.ritonglue.gostock.StockManager.TradeWrapper;
 
 public abstract class QueueStrategy implements Strategy {
 
-	public abstract Queue<Trade> getQueue();
+	public abstract Queue<TradeWrapper> getQueue();
 
 	@Override
-	public Trade peek() {
+	public TradeWrapper peek() {
 		return getQueue().peek();
 	}
 
 	@Override
-	public Trade remove() {
+	public TradeWrapper remove() {
 		return getQueue().remove();
 	}
 
@@ -25,7 +25,7 @@ public abstract class QueueStrategy implements Strategy {
 	}
 
 	@Override
-	public boolean add(Trade t) {
+	public boolean add(TradeWrapper t) {
 		return getQueue().add(t);
 	}
 
@@ -35,7 +35,7 @@ public abstract class QueueStrategy implements Strategy {
 	}
 
 	@Override
-	public Iterator<Trade> iterator() {
+	public Iterator<TradeWrapper> iterator() {
 		return getQueue().iterator();
 	}
 
