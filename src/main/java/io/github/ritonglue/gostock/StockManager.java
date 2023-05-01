@@ -262,6 +262,8 @@ public class StockManager {
 			private TradeType tradeType;
 			private Object source;
 
+			public Builder quantity(String quantity) {return quantity(new BigDecimal(quantity));}
+			public Builder quantity(long quantity) {return quantity(new BigDecimal(quantity));}
 			public Builder quantity(BigDecimal quantity) {this.quantity = quantity; return this;}
 			public Builder amount(MonetaryAmount amount) {this.amount = amount; return this;}
 			public Builder tradeType(TradeType tradeType) {this.tradeType = tradeType; return this;}
