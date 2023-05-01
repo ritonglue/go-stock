@@ -269,7 +269,7 @@ public class StockManager {
 			public Builder tradeType(TradeType tradeType) {this.tradeType = tradeType; return this;}
 			public Builder source(Object source) {this.source = source; return this;}
 
-			private TradeWrapper build() {
+			public TradeWrapper build() {
 				List<TradeWrapper> buyValues = null;
 				switch(tradeType) {
 					case BUY:
