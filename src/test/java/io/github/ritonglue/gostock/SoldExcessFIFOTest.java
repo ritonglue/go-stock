@@ -14,7 +14,7 @@ import org.junit.Test;
 
 import io.github.ritonglue.gostock.StockManager.TradeWrapper;
 
-public class SoldExcessTest {
+public class SoldExcessFIFOTest {
 	private final CurrencyUnit cu = Monetary.getCurrency("EUR");
 
 	private MonetaryAmount createMoney(String value) {
