@@ -77,6 +77,9 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(amount, position.getAmount());
 		SourceTest b = position.getBuy(SourceTest.class);
 		Assert.assertEquals(a, b);
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -106,6 +109,9 @@ public class StockManagerFIFOTest {
 		List<TradeWrapper> buyValues = list.get(1).getBuyValues();
 		Assert.assertEquals(1, buyValues.size());
 		Assert.assertEquals(a, buyValues.get(0).getSource());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -145,6 +151,9 @@ public class StockManagerFIFOTest {
 		List<TradeWrapper> buyValues = list.get(1).getBuyValues();
 		Assert.assertEquals(1, buyValues.size());
 		Assert.assertEquals(a, buyValues.get(0).getSource());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -192,6 +201,9 @@ public class StockManagerFIFOTest {
 		buyValues = list.get(2).getBuyValues();
 		Assert.assertEquals(1, buyValues.size());
 		Assert.assertEquals(a, buyValues.get(0).getSource());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -240,6 +252,9 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(2, buyValues.size());
 		Assert.assertEquals(b, buyValues.get(0).getSource());
 		Assert.assertEquals(a, buyValues.get(1).getSource());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -305,6 +320,9 @@ public class StockManagerFIFOTest {
 		buyValues = list.get(4).getBuyValues();
 		Assert.assertEquals(1, buyValues.size());
 		Assert.assertEquals(b, buyValues.get(0).getSource());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -389,6 +407,9 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(2, buyValues.size());
 		Assert.assertEquals(d, buyValues.get(0).getSource());
 		Assert.assertEquals(b, buyValues.get(1).getSource());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -469,6 +490,9 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(f, buy);
 		sell = position.getSell(SourceTest.class);
 		Assert.assertEquals(g, sell);
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -492,6 +516,9 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(createMoney(70), position.getAmount());
 		SourceTest buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(a, buy);
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -528,6 +555,9 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(a, buy);
 		SourceTest sell = position.getSell(SourceTest.class);
 		Assert.assertEquals(b, sell);
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -569,6 +599,9 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(a, buy);
 		sell = position.getSell(SourceTest.class);
 		Assert.assertEquals(c, sell);
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -626,6 +659,9 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(position.getAmount(), createMoney(200));
 		buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(d, buy);
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	/**
@@ -672,6 +708,9 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(createMoney(100*150), position.getAmount());
 		buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(b, buy);
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -699,6 +738,9 @@ public class StockManagerFIFOTest {
 		List<TradeWrapper> buyValues = list.get(1).getBuyValues();
 		Assert.assertEquals(1, buyValues.size());
 		Assert.assertEquals(a, buyValues.get(0).getSource());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -728,6 +770,9 @@ public class StockManagerFIFOTest {
 		List<TradeWrapper> buyValues = list.get(1).getBuyValues();
 		Assert.assertEquals(1, buyValues.size());
 		Assert.assertEquals(a, buyValues.get(0).getSource());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -770,6 +815,9 @@ public class StockManagerFIFOTest {
 		List<TradeWrapper> buyValues = list.get(1).getBuyValues();
 		Assert.assertEquals(1, buyValues.size());
 		Assert.assertEquals(a, buyValues.get(0).getSource());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -829,6 +877,9 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(2, buyValues.size());
 		Assert.assertEquals(c, buyValues.get(0).getSource());
 		Assert.assertEquals(a, buyValues.get(1).getSource());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -863,6 +914,9 @@ public class StockManagerFIFOTest {
 		Assert.assertTrue(position.isOpened());
 		buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(b, buy);
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -906,6 +960,9 @@ public class StockManagerFIFOTest {
 		Assert.assertTrue(position.isOpened());
 		buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(c, buy);
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -1016,6 +1073,9 @@ public class StockManagerFIFOTest {
 		Assert.assertEquals(e, closedPositions.get(2).getSell());
 		Assert.assertEquals(d, closedPositions.get(3).getBuy());
 		Assert.assertEquals(e, closedPositions.get(3).getSell());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -1040,6 +1100,9 @@ public class StockManagerFIFOTest {
 		Assert.assertTrue(position.isOpened());
 		SourceTest buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(a, buy);
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -1074,5 +1137,8 @@ public class StockManagerFIFOTest {
 		Assert.assertTrue(position.isOpened());
 		buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(b, buy);
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 }

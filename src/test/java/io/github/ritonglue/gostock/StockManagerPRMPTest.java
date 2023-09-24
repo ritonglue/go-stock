@@ -50,6 +50,9 @@ public class StockManagerPRMPTest {
 		Assert.assertTrue(position.isOpened());
 		Assert.assertEquals(quantity, position.getQuantity());
 		Assert.assertEquals(amount, position.getAmount());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -73,6 +76,9 @@ public class StockManagerPRMPTest {
 		Assert.assertEquals(amount, position.getAmount());
 		SourceTest sell = position.getSell(SourceTest.class);
 		Assert.assertEquals(b, sell);
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -104,6 +110,9 @@ public class StockManagerPRMPTest {
 		Assert.assertEquals(createMoney("66.67"), position.getAmount());
 		SourceTest sell = position.getSell(SourceTest.class);
 		Assert.assertEquals(b, sell);
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -139,6 +148,9 @@ public class StockManagerPRMPTest {
 		Assert.assertEquals(position.getAmount(), createMoney("33.33"));
 		sell = position.getSell(SourceTest.class);
 		Assert.assertEquals(c, sell);
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -169,6 +181,9 @@ public class StockManagerPRMPTest {
 		Assert.assertTrue(position.isOpened());
 		Assert.assertEquals(createQuantity(3), position.getQuantity());
 		Assert.assertEquals(createMoney("45.07"), position.getAmount());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -210,6 +225,9 @@ public class StockManagerPRMPTest {
 		Assert.assertTrue(position.isOpened());
 		Assert.assertEquals(createQuantity(7), position.getQuantity());
 		Assert.assertEquals(createMoney("171.55"), position.getAmount());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	/**
@@ -258,6 +276,9 @@ public class StockManagerPRMPTest {
 		Assert.assertTrue(position.isOpened());
 		Assert.assertEquals(createQuantity(210), position.getQuantity());
 		Assert.assertEquals(createMoney("9431.83"), position.getAmount());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -279,6 +300,9 @@ public class StockManagerPRMPTest {
 		Assert.assertTrue(position.isOpened());
 		Assert.assertEquals(quantity, position.getQuantity());
 		Assert.assertEquals(createMoney(70), position.getAmount());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -311,6 +335,9 @@ public class StockManagerPRMPTest {
 		Assert.assertEquals(createMoney("66.67"), position.getAmount());
 		SourceTest sell = position.getSell(SourceTest.class);
 		Assert.assertEquals(b, sell);
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -348,6 +375,9 @@ public class StockManagerPRMPTest {
 		Assert.assertEquals(position.getAmount(), createMoney("23.33"));
 		sell = position.getSell(SourceTest.class);
 		Assert.assertEquals(c, sell);
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -390,6 +420,9 @@ public class StockManagerPRMPTest {
 		Assert.assertTrue(position.isOpened());
 		Assert.assertEquals(createQuantity(7), position.getQuantity());
 		Assert.assertEquals(createMoney("170.50"), position.getAmount());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	/**
@@ -423,6 +456,9 @@ public class StockManagerPRMPTest {
 		Assert.assertTrue(position.isOpened());
 		Assert.assertEquals(createQuantity(100), position.getQuantity());
 		Assert.assertEquals(createMoney("12857.14"), position.getAmount());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -448,6 +484,9 @@ public class StockManagerPRMPTest {
 		Assert.assertEquals(createQuantity(11), position.getQuantity());
 		Assert.assertEquals(createMoney(210), position.getAmount());
 		Assert.assertTrue(position.isOpened());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 
 	@Test
@@ -475,5 +514,8 @@ public class StockManagerPRMPTest {
 		Assert.assertEquals(createQuantity(8+3+7), position.getQuantity());
 		Assert.assertEquals(createMoney(100+160+90-79), position.getAmount());
 		Assert.assertTrue(position.isOpened());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertTrue(orphanSells.isEmpty());
 	}
 }
