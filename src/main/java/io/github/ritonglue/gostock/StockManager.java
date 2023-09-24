@@ -28,6 +28,7 @@ public class StockManager {
 	private final Strategy strategy;
 	private final MonetaryAmountFactory<?> factory = Monetary.getDefaultAmountFactory();
 	private final List<Position> closedPositions = new ArrayList<>();
+	private final List<TradeWrapper> orphanSells = new ArrayList<>();
 	private final MonetaryRounding rounding;
 	
 	/**
@@ -217,10 +218,15 @@ public class StockManager {
 			return;
 		}
 		Strategy strategy = this.getStrategy();
-		if(strategy.isEmpty()) return;
+		BigDecimal sellQuantity = sell.getQuantity();
+		if(strategy.isEmpty()) {
+			if(sellQuantity.signum() > 0) {
+				this.orphanSells.add(sell);
+			}
+			return;
+		}
 
 		MonetaryAmountFactory<?> factory = this.getFactory();
-		BigDecimal sellQuantity = sell.getQuantity();
 		if(sellQuantity.signum() <= 0) return;
 
 		TradeWrapper buy = strategy.peek();
@@ -385,6 +391,10 @@ public class StockManager {
 			return source;
 		}
 
+		public <T> T getSource(Class<T> clazz) {
+			return clazz.cast(source);
+		}
+
 		public TradeType getTradeType() {
 			return tradeType;
 		}
@@ -426,5 +436,9 @@ public class StockManager {
 
 	public MonetaryRounding getRounding() {
 		return rounding;
+	}
+
+	public List<TradeWrapper> getOrphanSells() {
+		return orphanSells;
 	}
 }
