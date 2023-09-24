@@ -55,6 +55,27 @@ public class SoldExcessTest {
 		manager.process(list);
 		Assert.assertTrue(manager.getOpenedPositions().isEmpty());
 		Assert.assertTrue(manager.getClosedPositions().isEmpty());
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertEquals(1, orphanSells.size());
+		Assert.assertEquals(b, orphanSells.get(0).getSource());
+		Assert.assertEquals(quantity, orphanSells.get(0).getQuantity());
+	}
+
+	@Test
+	public void testEmptyRbt() {
+		int id = 1;
+		List<TradeWrapper> list = new ArrayList<>();
+		BigDecimal quantity = createQuantity("3");
+		SourceTest b = new SourceTest(id++);
+		list.add(TradeWrapper.reimbursement(quantity, b));
+		StockManager manager = newStockManager();
+		manager.process(list);
+		Assert.assertTrue(manager.getOpenedPositions().isEmpty());
+		Assert.assertTrue(manager.getClosedPositions().isEmpty());
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertEquals(1, orphanSells.size());
+		Assert.assertEquals(b, orphanSells.get(0).getSource());
+		Assert.assertEquals(quantity, orphanSells.get(0).getQuantity());
 	}
 
 	@Test
@@ -74,6 +95,11 @@ public class SoldExcessTest {
 		List<Position> closed = manager.getClosedPositions();
 		Assert.assertTrue(opened.isEmpty());
 		Assert.assertEquals(1, closed.size());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertEquals(1, orphanSells.size());
+		Assert.assertEquals(b, orphanSells.get(0).getSource());
+		Assert.assertEquals(createQuantity("1"), orphanSells.get(0).getQuantity());
 
 		Position position = closed.get(0);
 		Assert.assertTrue(position.isClosed());
@@ -108,6 +134,11 @@ public class SoldExcessTest {
 		List<Position> closed = manager.getClosedPositions();
 		Assert.assertEquals(1, opened.size());
 		Assert.assertEquals(1, closed.size());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertEquals(1, orphanSells.size());
+		Assert.assertEquals(b, orphanSells.get(0).getSource());
+		Assert.assertEquals(createQuantity("1"), orphanSells.get(0).getQuantity());
 
 		Position position = closed.get(0);
 		Assert.assertTrue(position.isClosed());
@@ -151,6 +182,13 @@ public class SoldExcessTest {
 		List<Position> closed = manager.getClosedPositions();
 		Assert.assertTrue(opened.isEmpty());
 		Assert.assertEquals(2, closed.size());
+
+		List<TradeWrapper> orphanSells = manager.getOrphanSells();
+		Assert.assertEquals(2, orphanSells.size());
+		Assert.assertEquals(b, orphanSells.get(0).getSource());
+		Assert.assertEquals(createQuantity("1"), orphanSells.get(0).getQuantity());
+		Assert.assertEquals(d, orphanSells.get(1).getSource());
+		Assert.assertEquals(createQuantity("1"), orphanSells.get(1).getQuantity());
 
 		Position position = closed.get(0);
 		Assert.assertTrue(position.isClosed());
