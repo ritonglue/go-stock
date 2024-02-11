@@ -14,6 +14,7 @@ import javax.money.MonetaryAmount;
 import javax.money.MonetaryAmountFactory;
 import javax.money.MonetaryRounding;
 
+import io.github.ritonglue.gostock.exception.StockAmountReductionException;
 import io.github.ritonglue.gostock.strategy.FIFOStrategy;
 import io.github.ritonglue.gostock.strategy.LIFOStrategy;
 import io.github.ritonglue.gostock.strategy.PRMPStrategy;
@@ -131,29 +132,37 @@ public class StockManager {
 		if(strategy.size() == 1) {
 			//easy case
 			TradeWrapper tmp = iter.next();
-			tmp.setAmount(tmp.getAmount().add(modificationAmount));
+			MonetaryAmount stockAmount = tmp.getAmount();
+			MonetaryAmount diff = stockAmount.add(modificationAmount);
+			if(diff.signum() < 0) {
+				throw new StockAmountReductionException(stockAmount, modificationAmount);
+			}
+			tmp.setAmount(diff);
 		} else {
 			TradeWrapper tmp = iter.next();
-			MonetaryAmount stockAmount = tmp.getAmount();
-			MonetaryAmount stockAmountAbs = stockAmount.abs();
-			BigDecimal stockQuantity = tmp.getQuantity();
-			while(iter.hasNext()) {
-				tmp = iter.next();
-				MonetaryAmount amount = tmp.getAmount();
-				stockAmount = stockAmount.add(amount);
-				stockAmountAbs = stockAmountAbs.add(amount.abs());
-				stockQuantity = stockQuantity.add(tmp.getQuantity());
-			}
-			iter = strategy.iterator();
-			if(stockAmountAbs.signum() == 0) {
-				if(stockQuantity.signum() == 0) {
-					return;
+			int sign = modificationAmount.signum();
+			if(sign > 0) {
+				//per quantity
+				BigDecimal stockQuantity = tmp.getQuantity();
+				while(iter.hasNext()) {
+					tmp = iter.next();
+					stockQuantity = stockQuantity.add(tmp.getQuantity());
 				}
-				//by quantity proportion
+				iter = strategy.iterator();
 				modification(modificationAmount, stockQuantity, iter);
-			} else {
-				//by absolute amount proportion
-				modification(modificationAmount, stockAmountAbs, stockAmount, iter);
+			} else if(sign < 0) {
+				//per amount
+				MonetaryAmount stockAmount = tmp.getAmount();
+				while(iter.hasNext()) {
+					tmp = iter.next();
+					stockAmount = stockAmount.add(tmp.getAmount());
+				}
+				MonetaryAmount diff = stockAmount.add(modificationAmount);
+				if(diff.signum() < 0) {
+					throw new StockAmountReductionException(stockAmount, modificationAmount);
+				}
+				iter = strategy.iterator();
+				modification(modificationAmount, stockAmount, iter);
 			}
 		}
 	}
@@ -182,22 +191,20 @@ public class StockManager {
 		}
 	}
 
-	private void modification(MonetaryAmount modificationAmount, MonetaryAmount stockAmountAbs, MonetaryAmount stockAmount, Iterator<TradeWrapper> iterator) {
+	private void modification(MonetaryAmount modificationAmount, MonetaryAmount stockAmount, Iterator<TradeWrapper> iterator) {
 		if(!iterator.hasNext()) return;
 		TradeWrapper tmp = iterator.next();
 		//proportion by amount
 		MonetaryAmount amount = tmp.getAmount();
-		MonetaryAmount amountAbs = amount.abs();
 		if(amount.equals(stockAmount)) {
 			tmp.setAmount(amount.add(modificationAmount));
 		} else {
-			double factor = amountAbs.getNumber().doubleValue() / stockAmountAbs.getNumber().doubleValue();
+			double factor = amount.getNumber().doubleValue() / stockAmount.getNumber().doubleValue();
 			MonetaryAmount value = modificationAmount.multiply(factor).with(getRounding());
 			tmp.setAmount(amount.add(value));
 			stockAmount = stockAmount.subtract(amount);
-			stockAmountAbs = stockAmountAbs.subtract(amountAbs);
 			modificationAmount = modificationAmount.subtract(value);
-			modification(modificationAmount, stockAmountAbs, stockAmount, iterator);
+			modification(modificationAmount, stockAmount, iterator);
 		}
 	}
 
