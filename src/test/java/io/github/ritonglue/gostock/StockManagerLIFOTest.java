@@ -17,6 +17,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import io.github.ritonglue.gostock.StockManager.TradeWrapper;
+import io.github.ritonglue.gostock.exception.StockAmountReductionException;
 
 public class StockManagerLIFOTest {
 	private final CurrencyUnit cu = Monetary.getCurrency("EUR");
@@ -738,5 +739,249 @@ public class StockManagerLIFOTest {
 		Assert.assertTrue(position.isOpened());
 		buy = position.getBuy(SourceTest.class);
 		Assert.assertEquals(a, buy);
+	}
+
+	@Test(expected = StockAmountReductionException.class)
+	public void testThrowSingleReduction() {
+		int id = 1;
+		List<TradeWrapper> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity(8), createMoney(0), a));
+		list.add(TradeWrapper.modification(createMoney(-50)));
+		StockManager manager = newStockManager();
+		manager.process(list);
+	}
+
+	@Test(expected = StockAmountReductionException.class)
+	public void testThrowMultiReduction() {
+		int id = 1;
+		List<TradeWrapper> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		SourceTest b = new SourceTest(id++);
+		SourceTest c = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(30), a));
+		list.add(TradeWrapper.buy(createQuantity(4), createMoney(20), b));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(0), c));
+		list.add(TradeWrapper.modification(createMoney(-60)));
+		StockManager manager = newStockManager();
+		manager.process(list);
+	}
+
+	@Test
+	public void testFullMultiReduction() {
+		int id = 1;
+		List<TradeWrapper> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		SourceTest b = new SourceTest(id++);
+		SourceTest c = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(30), a));
+		list.add(TradeWrapper.buy(createQuantity(4), createMoney(20), b));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(0), c));
+		list.add(TradeWrapper.modification(createMoney(-50)));
+		StockManager manager = newStockManager();
+		manager.process(list);
+		TradeWrapper stock = manager.getStock();
+		Assert.assertEquals(createMoney(0), stock.getAmount());
+
+		List<Position> openedPositions = manager.getOpenedPositions();
+		Assert.assertEquals(3, openedPositions.size());
+
+		Position position = openedPositions.get(0);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney(0), position.getAmount());
+
+		position = openedPositions.get(1);
+		Assert.assertEquals(createQuantity(4), position.getQuantity());
+		Assert.assertEquals(createMoney(0), position.getAmount());
+
+		position = openedPositions.get(2);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney(0), position.getAmount());
+	}
+
+	@Test
+	public void testMultiReduction() {
+		int id = 1;
+		List<TradeWrapper> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		SourceTest b = new SourceTest(id++);
+		SourceTest c = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(30), a));
+		list.add(TradeWrapper.buy(createQuantity(4), createMoney(20), b));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(0), c));
+		list.add(TradeWrapper.modification(createMoney(-40)));
+		StockManager manager = newStockManager();
+		manager.process(list);
+		TradeWrapper stock = manager.getStock();
+		Assert.assertEquals(createMoney(10), stock.getAmount());
+
+		List<Position> openedPositions = manager.getOpenedPositions();
+		Assert.assertEquals(3, openedPositions.size());
+
+		Position position = openedPositions.get(0);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney(0), position.getAmount());
+
+		position = openedPositions.get(1);
+		Assert.assertEquals(createQuantity(4), position.getQuantity());
+		Assert.assertEquals(createMoney(4), position.getAmount());
+
+		position = openedPositions.get(2);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney(6), position.getAmount());
+	}
+
+	@Test
+	public void testOneReduction() {
+		int id = 1;
+		List<TradeWrapper> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(30), a));
+		list.add(TradeWrapper.modification(createMoney(-20)));
+		StockManager manager = newStockManager();
+		manager.process(list);
+		TradeWrapper stock = manager.getStock();
+		Assert.assertEquals(createMoney(10), stock.getAmount());
+
+		List<Position> openedPositions = manager.getOpenedPositions();
+		Assert.assertEquals(1, openedPositions.size());
+
+		Position position = openedPositions.get(0);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney(10), position.getAmount());
+	}
+
+	@Test
+	public void testOneRaise() {
+		int id = 1;
+		List<TradeWrapper> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(30), a));
+		list.add(TradeWrapper.modification(createMoney(20)));
+		StockManager manager = newStockManager();
+		manager.process(list);
+		TradeWrapper stock = manager.getStock();
+		Assert.assertEquals(createMoney(50), stock.getAmount());
+
+		List<Position> openedPositions = manager.getOpenedPositions();
+		Assert.assertEquals(1, openedPositions.size());
+
+		Position position = openedPositions.get(0);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney(50), position.getAmount());
+	}
+
+	@Test
+	public void testMultiRaise() {
+		int id = 1;
+		List<TradeWrapper> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		SourceTest b = new SourceTest(id++);
+		SourceTest c = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(30), a));
+		list.add(TradeWrapper.buy(createQuantity(4), createMoney(20), b));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(0), c));
+		list.add(TradeWrapper.modification(createMoney(30)));
+		StockManager manager = newStockManager();
+		manager.process(list);
+		TradeWrapper stock = manager.getStock();
+		Assert.assertEquals(createMoney(80), stock.getAmount());
+
+		List<Position> openedPositions = manager.getOpenedPositions();
+		Assert.assertEquals(3, openedPositions.size());
+
+		Position position = openedPositions.get(0);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney(9), position.getAmount());
+		Assert.assertEquals(c, position.getBuy());
+
+		position = openedPositions.get(1);
+		Assert.assertEquals(createQuantity(4), position.getQuantity());
+		Assert.assertEquals(createMoney(32), position.getAmount());
+		Assert.assertEquals(b, position.getBuy());
+
+		position = openedPositions.get(2);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney(39), position.getAmount());
+		Assert.assertEquals(a, position.getBuy());
+	}
+
+	@Test
+	public void testMultiReductionWithSell() {
+		int id = 1;
+		List<TradeWrapper> list = new ArrayList<>();
+		SourceTest o = new SourceTest(id++);
+		SourceTest a = new SourceTest(id++);
+		SourceTest b = new SourceTest(id++);
+		SourceTest c = new SourceTest(id++);
+		SourceTest d = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(0), c));
+		list.add(TradeWrapper.buy(createQuantity(4), createMoney(20), b));
+		list.add(TradeWrapper.buy(createQuantity(4), createMoney(40), a));
+		list.add(TradeWrapper.buy(createQuantity(7), createMoney(17), o));
+		list.add(TradeWrapper.sell(createQuantity(8), d));
+		list.add(TradeWrapper.modification(createMoney(-40)));
+		StockManager manager = newStockManager();
+		manager.process(list);
+		TradeWrapper stock = manager.getStock();
+		Assert.assertEquals(createMoney(10), stock.getAmount());
+
+		List<Position> closedPositions = manager.getClosedPositions();
+		Assert.assertEquals(2, closedPositions.size());
+		List<Position> openedPositions = manager.getOpenedPositions();
+		Assert.assertEquals(3, openedPositions.size());
+
+		Position position = openedPositions.get(0);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney(6), position.getAmount());
+
+		position = openedPositions.get(1);
+		Assert.assertEquals(createQuantity(4), position.getQuantity());
+		Assert.assertEquals(createMoney(4), position.getAmount());
+
+		position = openedPositions.get(2);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney(0), position.getAmount());
+	}
+
+	@Test
+	public void testMultiRaiseWithSell() {
+		int id = 1;
+		List<TradeWrapper> list = new ArrayList<>();
+		SourceTest o = new SourceTest(id++);
+		SourceTest a = new SourceTest(id++);
+		SourceTest b = new SourceTest(id++);
+		SourceTest c = new SourceTest(id++);
+		SourceTest d = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(0), c));
+		list.add(TradeWrapper.buy(createQuantity(4), createMoney(20), b));
+		list.add(TradeWrapper.buy(createQuantity(4), createMoney(40), a));
+		list.add(TradeWrapper.buy(createQuantity(7), createMoney(17), o));
+		list.add(TradeWrapper.sell(createQuantity(8), d));
+		list.add(TradeWrapper.modification(createMoney(30)));
+		StockManager manager = newStockManager();
+		manager.process(list);
+		TradeWrapper stock = manager.getStock();
+		Assert.assertEquals(createMoney(80), stock.getAmount());
+
+		List<Position> closedPositions = manager.getClosedPositions();
+		Assert.assertEquals(2, closedPositions.size());
+		List<Position> openedPositions = manager.getOpenedPositions();
+		Assert.assertEquals(3, openedPositions.size());
+
+		Position position = openedPositions.get(0);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney(39), position.getAmount());
+		Assert.assertEquals(a, position.getBuy());
+
+		position = openedPositions.get(1);
+		Assert.assertEquals(createQuantity(4), position.getQuantity());
+		Assert.assertEquals(createMoney(32), position.getAmount());
+		Assert.assertEquals(b, position.getBuy());
+
+		position = openedPositions.get(2);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney(9), position.getAmount());
+		Assert.assertEquals(c, position.getBuy());
 	}
 }
