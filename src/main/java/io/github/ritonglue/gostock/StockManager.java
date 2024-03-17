@@ -3,6 +3,7 @@ package io.github.ritonglue.gostock;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -33,7 +34,10 @@ public class StockManager {
 	private final List<Position> closedPositions = new ArrayList<>();
 	private final List<TradeWrapper> orphanSells = new ArrayList<>();
 	private final MonetaryRounding rounding;
+	//key is (buy, sell) tradeWrappers
 	private final Map<BuySellKey, MonetaryAmount> mapBuySell = new HashMap<>();
+	//key is a modification tradeWrapper
+	private final Map<TradeWrapper, Map<TradeWrapper, MonetaryAmount>> mapModification = new HashMap<>();
 
 	private static class BuySellKey {
 		private final TradeWrapper buy;
@@ -56,7 +60,7 @@ public class StockManager {
 			return Objects.hash(buy, sell);
 		}
 	}
-	
+
 	/**
 	 * A stock manager in FIFO mode with default rouding operator
 	 */
@@ -95,11 +99,37 @@ public class StockManager {
 		this.rounding = rounding;
 	}
 
-	public void addBuySellMoney(TradeWrapper buy, TradeWrapper sell, MonetaryAmount money) {
+	/**
+	 * force amount reduction to the buy value sold by sell value
+	 * @param buy
+	 * @param sell
+	 * @param amount
+	 */
+	public void addBuySellMoney(TradeWrapper buy, TradeWrapper sell, MonetaryAmount amount) {
 		if(buy == null) return;
 		if(sell == null) return;
-		if(money == null) return;
-		this.mapBuySell.put(new BuySellKey(sell, buy), money);
+		if(amount == null) return;
+		if(amount.signum() > 0) {
+			this.mapBuySell.put(new BuySellKey(sell, buy), amount);
+		}
+	}
+
+	/**
+	 * force modification amount for this buy value
+	 * @param buy
+	 * @param modification
+	 * @param amount
+	 */
+	public void addBuyModificationMoney(TradeWrapper buy, TradeWrapper modification, MonetaryAmount amount) {
+		if(buy == null) return;
+		if(modification == null) return;
+		if(amount == null) return;
+		MonetaryAmount modificationAmount = modification.getAmount();
+		//check same sign
+		if(amount.signum() * modificationAmount.signum() > 0) {
+			this.mapModification.computeIfAbsent(modification, o -> new HashMap<>())
+				.put(buy, amount);
+		}
 	}
 
 	public List<Position> getOpenedPositions() {
@@ -155,12 +185,51 @@ public class StockManager {
 		sell(trade);
 	}
 
+	/**
+	 * check if collection amount doesn't exceed modificiationAmount
+	 * @param modificationAmount
+	 * @param modifications
+	 */
+	private static void checkModifications(MonetaryAmount modificationAmount, Collection<MonetaryAmount> modifications) {
+		if(modifications.isEmpty()) return;
+		Iterator<MonetaryAmount> iter = modifications.iterator();
+		MonetaryAmount sum = iter.next().abs();
+		while(iter.hasNext()) {
+			sum = sum.add(iter.next().abs());
+		}
+		MonetaryAmount modificationAmountAbs = modificationAmount.abs();
+		MonetaryAmount diff = modificationAmountAbs.subtract(sum);
+		if(diff.signum() < 0) {
+			throw new IllegalStateException("bad total modication amount %s %s".formatted(modificationAmount, sum));
+		}
+	}
+
 	private void modification(TradeWrapper t) {
 		if(t.getTradeType() != TradeType.MODIFICATION) return;
 		Strategy strategy = this.getStrategy();
-		MonetaryAmount modificationAmount = t.getAmount();
 		Iterator<TradeWrapper> iter = strategy.iterator();
+		List<TradeWrapper> list = null;
 		if(strategy.size() == 1) {
+			//easy case
+			list = List.of(iter.next());
+		} else {
+			list = new ArrayList<>();
+			while(iter.hasNext()) {
+				list.add(iter.next());
+			}
+		}
+		modification(t, list);
+	}
+
+	/**
+	 * apply modification t to list of buy values
+	 * @param t
+	 * @param buys
+	 */
+	private void modification(TradeWrapper t, List<TradeWrapper> buys) {
+		MonetaryAmount modificationAmount = t.getAmount();
+		Iterator<TradeWrapper> iter = buys.iterator();
+		if(buys.size() == 1) {
 			//easy case
 			TradeWrapper tmp = iter.next();
 			MonetaryAmount stockAmount = tmp.getAmount();
@@ -170,6 +239,33 @@ public class StockManager {
 			}
 			tmp.setAmount(diff);
 		} else {
+			//multiple buy values
+			Map<TradeWrapper, MonetaryAmount> modifications = this.mapModification.get(t);
+			if(modifications != null) {
+				checkModifications(modificationAmount, modifications.values());
+				//build new buys list
+				buys = new ArrayList<>();
+				//force modification amount
+				while(iter.hasNext()) {
+					TradeWrapper tmp = iter.next();
+					MonetaryAmount amount = modifications.get(tmp);
+					if(amount != null) {
+						modificationAmount = modificationAmount.subtract(amount);
+						MonetaryAmount a = tmp.getAmount().add(amount);
+						if(a.signum() < 0) {
+							throw new StockAmountReductionException(tmp.getAmount(), amount);
+						}
+						tmp.setAmount(a);
+					} else {
+						//this buy value is not forced
+						buys.add(tmp);
+					}
+				}
+				if(buys.isEmpty()) {
+					return;
+				}
+				iter = buys.iterator();
+			}
 			TradeWrapper tmp = iter.next();
 			int sign = modificationAmount.signum();
 			if(sign > 0) {
@@ -179,7 +275,7 @@ public class StockManager {
 					tmp = iter.next();
 					stockQuantity = stockQuantity.add(tmp.getQuantity());
 				}
-				iter = strategy.iterator();
+				iter = buys.iterator();
 				modification(modificationAmount, stockQuantity, iter);
 			} else if(sign < 0) {
 				//per amount
@@ -192,7 +288,7 @@ public class StockManager {
 				if(diff.signum() < 0) {
 					throw new StockAmountReductionException(stockAmount, modificationAmount);
 				}
-				iter = strategy.iterator();
+				iter = buys.iterator();
 				modification(modificationAmount, stockAmount, iter);
 			}
 		}
