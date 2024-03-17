@@ -21,13 +21,16 @@ Rouding is taken into account. For example, you can buy 3 items at 100.00 euros 
   3. [PRMP](#prmp)
 4. [Modification](#modification)
 5. [Reimbursement](#reimbursement)
+6. [Force values](#force-values)
+  1. [Force sell](#force-sell)
+  2. [Force modification](#force-modification)
 
 ## Maven Dependency
 ````
 <dependency>
   <groupId>io.github.ritonglue</groupId>
   <artifactId>go-stock</artifactId>
-  <version>2.1.1</version>
+  <version>2.1.4</version>
 </dependency>
 ````
 
@@ -249,4 +252,48 @@ A reimbursement will close all opened positions. After that the stock is empty (
 	stock = manager.getStock();
 	Assert.assertEquals(BigDecimal.ZERO, stock.getQuantity());
 	Assert.assertNull(stock.getAmount());
+```
+
+## Force values
+It's possible to force some modifications
+### Force sell
+For example : you buy 3 units at 100.00 and you sell them one by one. By default the reduction amount sequence is 33.33, 33.34, 33.33. It's possible to force the first values
+
+``` java
+	int id = 1;
+	List<TradeWrapper> list = new ArrayList<>();
+	MonetaryAmount amount = createMoney("100.00");
+	SourceTest a = new SourceTest(id++);
+	SourceTest b = new SourceTest(id++);
+	SourceTest c = new SourceTest(id++);
+	SourceTest d = new SourceTest(id++);
+	TradeWrapper buy = TradeWrapper.buy(createQuantity(3), amount, a);
+	TradeWrapper sell1 = TradeWrapper.sell(createQuantity(1), b);
+	TradeWrapper sell2 = TradeWrapper.sell(createQuantity(1), c);
+	TradeWrapper sell3 = TradeWrapper.sell(createQuantity(1), d);
+	list.add(buy);
+	list.add(sell1);
+	list.add(sell2);
+	list.add(sell3);
+	StockManager manager = newStockManager();
+	//force modification for the couple (buy, sell1)
+	manager.addBuySellMoney(buy, sell1, createMoney("33.34"));
+	manager.process(list);
+```
+### Force modification
+For example : you want to apply an even distribution of you modification
+
+``` java
+		int id = 1;
+		SourceTest a = new SourceTest(id++);
+		SourceTest b = new SourceTest(id++);
+		TradeWrapper buy1 = TradeWrapper.buy(createQuantity(3), createMoney("123.11"), a);
+		TradeWrapper buy2 = TradeWrapper.buy(createQuantity(4), createMoney("12.99"), b);
+		TradeWrapper modification = TradeWrapper.modification(createMoney("-10.00"));
+		List<TradeWrapper> list = List.of(buy1, buy2, modification);
+		StockManager manager = newStockManager();
+		manager.addBuyModificationMoney(buy1, modification, createMoney("-5.00"));
+		//not necessary
+		manager.addBuyModificationMoney(buy2, modification, createMoney("-5.00"));
+		manager.process(list);
 ```
