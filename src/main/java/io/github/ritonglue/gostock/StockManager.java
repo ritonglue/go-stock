@@ -4,8 +4,10 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.money.CurrencyUnit;
@@ -31,6 +33,29 @@ public class StockManager {
 	private final List<Position> closedPositions = new ArrayList<>();
 	private final List<TradeWrapper> orphanSells = new ArrayList<>();
 	private final MonetaryRounding rounding;
+	private final Map<BuySellKey, MonetaryAmount> mapBuySell = new HashMap<>();
+
+	private static class BuySellKey {
+		private final TradeWrapper buy;
+		private final TradeWrapper sell;
+
+		private BuySellKey(TradeWrapper sell, TradeWrapper buy) {
+			this.buy = buy;
+			this.sell = sell;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if(!(obj instanceof BuySellKey)) return false;
+			BuySellKey key = (BuySellKey) obj;
+			return Objects.equals(key.buy, this.buy)
+			&& Objects.equals(key.sell, this.sell);
+		}
+		@Override
+		public int hashCode() {
+			return Objects.hash(buy, sell);
+		}
+	}
 	
 	/**
 	 * A stock manager in FIFO mode with default rouding operator
@@ -45,7 +70,6 @@ public class StockManager {
 	 */
 	public StockManager(Mode mode) {
 		this(mode, Monetary.getDefaultRounding());
-
 	}
 
 	/**
@@ -69,6 +93,13 @@ public class StockManager {
 			throw new AssertionError();
 		}
 		this.rounding = rounding;
+	}
+
+	public void addBuySellMoney(TradeWrapper buy, TradeWrapper sell, MonetaryAmount money) {
+		if(buy == null) return;
+		if(sell == null) return;
+		if(money == null) return;
+		this.mapBuySell.put(new BuySellKey(sell, buy), money);
 	}
 
 	public List<Position> getOpenedPositions() {
@@ -262,16 +293,25 @@ public class StockManager {
 			}
 		} else {
 			//partial sell
+			BuySellKey key = new BuySellKey(sell, buy);
 			buy.setQuantity(stockQuantity.subtract(sellQuantity));
-			MonetaryAmount m = stockAmount.multiply(sellQuantity);
-			try {
-				m = m.divide(stockQuantity);
-			} catch(ArithmeticException e) {
-				double x = m.getNumber().doubleValue() / stockQuantity.doubleValue();
-				m = factory.setNumber(x).create();
+			//is the amount provided ?
+			MonetaryAmount m = this.mapBuySell.get(key);
+			if(m == null) {
+				//compute amount m
+				m = stockAmount.multiply(sellQuantity);
+				try {
+					m = m.divide(stockQuantity);
+				} catch(ArithmeticException e) {
+					double x = m.getNumber().doubleValue() / stockQuantity.doubleValue();
+					m = factory.setNumber(x).create();
+				}
+				m = m.with(getRounding());
 			}
-			m = m.with(getRounding());
 			buy.setAmount(stockAmount.subtract(m));
+			if(buy.getAmount().signum() < 0) {
+				throw new IllegalStateException("buy amount negative");
+			}
 			sell.setAmount(sell.getAmount().add(m));
 			sell.setQuantity(BigDecimal.ZERO);
 			Position position = new Position(buySource, sellSource, sellQuantity, m, closeCause);
