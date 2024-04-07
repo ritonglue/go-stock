@@ -107,6 +107,7 @@ public class StockManager {
 	/**
 	 * Force amount reduction to the buy value sold by sell value
 	 * Only used if there are many buy values for this sell.
+	 *
 	 * @param buy
 	 * @param sell
 	 * @param amount
@@ -123,7 +124,7 @@ public class StockManager {
 	/**
 	 * Force modification amount for this buy value.
 	 * Only used if there are many buy values for this modification.
-	 * 
+	 *
 	 * @param buy
 	 * @param modification
 	 * @param amount
