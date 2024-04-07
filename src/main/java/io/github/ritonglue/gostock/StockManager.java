@@ -33,6 +33,11 @@ public class StockManager {
 	private final MonetaryAmountFactory<?> factory = Monetary.getDefaultAmountFactory();
 	private final List<Position> closedPositions = new ArrayList<>();
 	private final List<TradeWrapper> orphanSells = new ArrayList<>();
+	private final List<Modification> modifications = new ArrayList<>();
+	public List<Modification> getModifications() {
+		return modifications;
+	}
+
 	private final MonetaryRounding rounding;
 	//key is (buy, sell) tradeWrappers
 	private final Map<BuySellKey, MonetaryAmount> mapBuySell = new HashMap<>();
@@ -100,7 +105,8 @@ public class StockManager {
 	}
 
 	/**
-	 * force amount reduction to the buy value sold by sell value
+	 * Force amount reduction to the buy value sold by sell value
+	 * Only used if there are many buy values for this sell.
 	 * @param buy
 	 * @param sell
 	 * @param amount
@@ -115,7 +121,9 @@ public class StockManager {
 	}
 
 	/**
-	 * force modification amount for this buy value
+	 * Force modification amount for this buy value.
+	 * Only used if there are many buy values for this modification.
+	 * 
 	 * @param buy
 	 * @param modification
 	 * @param amount
@@ -231,13 +239,15 @@ public class StockManager {
 		Iterator<TradeWrapper> iter = buys.iterator();
 		if(buys.size() == 1) {
 			//easy case
-			TradeWrapper tmp = iter.next();
-			MonetaryAmount stockAmount = tmp.getAmount();
+			TradeWrapper buy = iter.next();
+			MonetaryAmount stockAmount = buy.getAmount();
 			MonetaryAmount diff = stockAmount.add(modificationAmount);
 			if(diff.signum() < 0) {
 				throw new StockAmountReductionException(stockAmount, modificationAmount);
 			}
-			tmp.setAmount(diff);
+			buy.setAmount(diff);
+			Modification modification = new Modification(buy, t, buy.getQuantity(), stockAmount, buy.getAmount());
+			this.modifications.add(modification);
 		} else {
 			//multiple buy values
 			Map<TradeWrapper, MonetaryAmount> modifications = this.mapModification.get(t);
@@ -247,18 +257,20 @@ public class StockManager {
 				buys = new ArrayList<>();
 				//force modification amount
 				while(iter.hasNext()) {
-					TradeWrapper tmp = iter.next();
-					MonetaryAmount amount = modifications.get(tmp);
+					TradeWrapper buy = iter.next();
+					MonetaryAmount amount = modifications.get(buy);
 					if(amount != null) {
 						modificationAmount = modificationAmount.subtract(amount);
-						MonetaryAmount a = tmp.getAmount().add(amount);
+						MonetaryAmount a = buy.getAmount().add(amount);
 						if(a.signum() < 0) {
-							throw new StockAmountReductionException(tmp.getAmount(), amount);
+							throw new StockAmountReductionException(buy.getAmount(), amount);
 						}
-						tmp.setAmount(a);
+						buy.setAmount(a);
+						Modification modification = new Modification(buy, t, buy.getQuantity(), amount, buy.getAmount());
+						this.modifications.add(modification);
 					} else {
 						//this buy value is not forced
-						buys.add(tmp);
+						buys.add(buy);
 					}
 				}
 				if(buys.isEmpty()) {
@@ -266,42 +278,44 @@ public class StockManager {
 				}
 				iter = buys.iterator();
 			}
-			TradeWrapper tmp = iter.next();
+			TradeWrapper buy = iter.next();
 			int sign = modificationAmount.signum();
 			if(sign > 0) {
 				//per quantity
-				BigDecimal stockQuantity = tmp.getQuantity();
+				BigDecimal stockQuantity = buy.getQuantity();
 				while(iter.hasNext()) {
-					tmp = iter.next();
-					stockQuantity = stockQuantity.add(tmp.getQuantity());
+					buy = iter.next();
+					stockQuantity = stockQuantity.add(buy.getQuantity());
 				}
 				iter = buys.iterator();
-				modification(modificationAmount, stockQuantity, iter);
+				modification(t, modificationAmount, stockQuantity, iter);
 			} else if(sign < 0) {
 				//per amount
-				MonetaryAmount stockAmount = tmp.getAmount();
+				MonetaryAmount stockAmount = buy.getAmount();
 				while(iter.hasNext()) {
-					tmp = iter.next();
-					stockAmount = stockAmount.add(tmp.getAmount());
+					buy = iter.next();
+					stockAmount = stockAmount.add(buy.getAmount());
 				}
 				MonetaryAmount diff = stockAmount.add(modificationAmount);
 				if(diff.signum() < 0) {
 					throw new StockAmountReductionException(stockAmount, modificationAmount);
 				}
 				iter = buys.iterator();
-				modification(modificationAmount, stockAmount, iter);
+				modification(t, modificationAmount, stockAmount, iter);
 			}
 		}
 	}
 	
-	private void modification(MonetaryAmount modificationAmount, BigDecimal stockQuantity, Iterator<TradeWrapper> iterator) {
+	private void modification(TradeWrapper t, MonetaryAmount modificationAmount, BigDecimal stockQuantity, Iterator<TradeWrapper> iterator) {
 		if(!iterator.hasNext()) return;
-		TradeWrapper tmp = iterator.next();
+		TradeWrapper buy = iterator.next();
 		//proportion by quantity
-		MonetaryAmount amount = tmp.getAmount();
-		BigDecimal quantity = tmp.getQuantity();
+		MonetaryAmount amount = buy.getAmount();
+		BigDecimal quantity = buy.getQuantity();
 		if(quantity.equals(stockQuantity)) {
-			tmp.setAmount(amount.add(modificationAmount));
+			buy.setAmount(amount.add(modificationAmount));
+			Modification modification = new Modification(buy, t, buy.getQuantity(), amount, buy.getAmount());
+			this.modifications.add(modification);
 		} else {
 			MonetaryAmount value = modificationAmount.multiply(quantity);
 			try {
@@ -311,27 +325,33 @@ public class StockManager {
 				value = factory.setNumber(x).setCurrency(amount.getCurrency()).create();
 			}
 			value = value.with(getRounding());
-			tmp.setAmount(amount.add(value));
+			buy.setAmount(amount.add(value));
 			modificationAmount = modificationAmount.subtract(value);
 			stockQuantity = stockQuantity.subtract(quantity);
-			modification(modificationAmount, stockQuantity, iterator);
+			Modification modification = new Modification(buy, t, buy.getQuantity(), amount, buy.getAmount());
+			this.modifications.add(modification);
+			modification(t, modificationAmount, stockQuantity, iterator);
 		}
 	}
 
-	private void modification(MonetaryAmount modificationAmount, MonetaryAmount stockAmount, Iterator<TradeWrapper> iterator) {
+	private void modification(TradeWrapper t, MonetaryAmount modificationAmount, MonetaryAmount stockAmount, Iterator<TradeWrapper> iterator) {
 		if(!iterator.hasNext()) return;
-		TradeWrapper tmp = iterator.next();
+		TradeWrapper buy = iterator.next();
 		//proportion by amount
-		MonetaryAmount amount = tmp.getAmount();
+		MonetaryAmount amount = buy.getAmount();
 		if(amount.equals(stockAmount)) {
-			tmp.setAmount(amount.add(modificationAmount));
+			buy.setAmount(amount.add(modificationAmount));
+			Modification modification = new Modification(buy, t, buy.getQuantity(), amount, buy.getAmount());
+			this.modifications.add(modification);
 		} else {
 			double factor = amount.getNumber().doubleValue() / stockAmount.getNumber().doubleValue();
 			MonetaryAmount value = modificationAmount.multiply(factor).with(getRounding());
-			tmp.setAmount(amount.add(value));
+			buy.setAmount(amount.add(value));
 			stockAmount = stockAmount.subtract(amount);
 			modificationAmount = modificationAmount.subtract(value);
-			modification(modificationAmount, stockAmount, iterator);
+			Modification modification = new Modification(buy, t, buy.getQuantity(), amount, buy.getAmount());
+			this.modifications.add(modification);
+			modification(t, modificationAmount, stockAmount, iterator);
 		}
 	}
 
