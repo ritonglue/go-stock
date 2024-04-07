@@ -4,7 +4,10 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import javax.money.CurrencyUnit;
 import javax.money.Monetary;
@@ -520,6 +523,15 @@ public class StockManagerFIFOTest {
 
 		List<TradeWrapper> orphanSells = manager.getOrphanSells();
 		Assert.assertTrue(orphanSells.isEmpty());
+
+		List<Modification> modifications = manager.getModifications();
+		Assert.assertEquals(1, modifications.size());
+		Modification modification = modifications.get(0);
+		Assert.assertEquals(list.get(0), modification.getBuy());
+		Assert.assertEquals(a, modification.getBuy().getSource());
+		Assert.assertTrue(new BigDecimal(3).compareTo(modification.getQuantity()) == 0);
+		Assert.assertEquals(createMoney(100), modification.getAmountBefore());
+		Assert.assertEquals(createMoney(70), modification.getAmountAfter());
 	}
 
 	@Test
@@ -559,6 +571,15 @@ public class StockManagerFIFOTest {
 
 		List<TradeWrapper> orphanSells = manager.getOrphanSells();
 		Assert.assertTrue(orphanSells.isEmpty());
+
+		List<Modification> modifications = manager.getModifications();
+		Assert.assertEquals(1, modifications.size());
+		Modification modification = modifications.get(0);
+		Assert.assertEquals(list.get(0), modification.getBuy());
+		Assert.assertEquals(a, modification.getBuy().getSource());
+		Assert.assertTrue(new BigDecimal(1).compareTo(modification.getQuantity()) == 0);
+		Assert.assertEquals(createMoney("33.33"), modification.getAmountBefore());
+		Assert.assertEquals(createMoney("23.33"), modification.getAmountAfter());
 	}
 
 	@Test
@@ -663,6 +684,15 @@ public class StockManagerFIFOTest {
 
 		List<TradeWrapper> orphanSells = manager.getOrphanSells();
 		Assert.assertTrue(orphanSells.isEmpty());
+
+		List<Modification> modifications = manager.getModifications();
+		Assert.assertEquals(1, modifications.size());
+		Modification modification = modifications.get(0);
+		Assert.assertEquals(list.get(1), modification.getBuy());
+		Assert.assertEquals(b, modification.getBuy().getSource());
+		Assert.assertTrue(new BigDecimal(3).compareTo(modification.getQuantity()) == 0);
+		Assert.assertEquals(createMoney("3.88"), modification.getAmountBefore());
+		Assert.assertEquals(createMoney("2.38"), modification.getAmountAfter());
 	}
 
 	/**
@@ -918,6 +948,25 @@ public class StockManagerFIFOTest {
 
 		List<TradeWrapper> orphanSells = manager.getOrphanSells();
 		Assert.assertTrue(orphanSells.isEmpty());
+
+		List<Modification> modifications = manager.getModifications();
+		Assert.assertEquals(2, modifications.size());
+		Map<TradeWrapper, Modification> map = modifications.stream().collect(Collectors.toMap(Modification::getBuy, Function.identity()));
+		Modification modification = map.get(list.get(0));
+		Assert.assertNotNull(modification);
+		Assert.assertEquals(list.get(0), modification.getBuy());
+		Assert.assertEquals(a, modification.getBuy().getSource());
+		Assert.assertTrue(new BigDecimal(8).compareTo(modification.getQuantity()) == 0);
+		Assert.assertEquals(createMoney("100"), modification.getAmountBefore());
+		Assert.assertEquals(createMoney("80.77"), modification.getAmountAfter());
+
+		modification = map.get(list.get(1));
+		Assert.assertNotNull(modification);
+		Assert.assertEquals(list.get(1), modification.getBuy());
+		Assert.assertEquals(b, modification.getBuy().getSource());
+		Assert.assertTrue(new BigDecimal(3).compareTo(modification.getQuantity()) == 0);
+		Assert.assertEquals(createMoney("160"), modification.getAmountBefore());
+		Assert.assertEquals(createMoney("129.23"), modification.getAmountAfter());
 	}
 
 	@Test
@@ -964,6 +1013,33 @@ public class StockManagerFIFOTest {
 
 		List<TradeWrapper> orphanSells = manager.getOrphanSells();
 		Assert.assertTrue(orphanSells.isEmpty());
+
+		List<Modification> modifications = manager.getModifications();
+		Assert.assertEquals(3, modifications.size());
+		Map<TradeWrapper, Modification> map = modifications.stream().collect(Collectors.toMap(Modification::getBuy, Function.identity()));
+		Modification modification = map.get(list.get(0));
+		Assert.assertNotNull(modification);
+		Assert.assertEquals(list.get(0), modification.getBuy());
+		Assert.assertEquals(a, modification.getBuy().getSource());
+		Assert.assertTrue(new BigDecimal(8).compareTo(modification.getQuantity()) == 0);
+		Assert.assertEquals(createMoney("100"), modification.getAmountBefore());
+		Assert.assertEquals(createMoney("77.43"), modification.getAmountAfter());
+
+		modification = map.get(list.get(1));
+		Assert.assertNotNull(modification);
+		Assert.assertEquals(list.get(1), modification.getBuy());
+		Assert.assertEquals(b, modification.getBuy().getSource());
+		Assert.assertTrue(new BigDecimal(3).compareTo(modification.getQuantity()) == 0);
+		Assert.assertEquals(createMoney("160"), modification.getAmountBefore());
+		Assert.assertEquals(createMoney("123.88"), modification.getAmountAfter());
+
+		modification = map.get(list.get(2));
+		Assert.assertNotNull(modification);
+		Assert.assertEquals(list.get(2), modification.getBuy());
+		Assert.assertEquals(c, modification.getBuy().getSource());
+		Assert.assertTrue(new BigDecimal(7).compareTo(modification.getQuantity()) == 0);
+		Assert.assertEquals(createMoney("90"), modification.getAmountBefore());
+		Assert.assertEquals(createMoney("69.69"), modification.getAmountAfter());
 	}
 
 	@Test
