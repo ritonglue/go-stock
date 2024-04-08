@@ -482,7 +482,6 @@ public class StockManager {
 						break;
 					case MODIFICATION:
 						buyValues = Collections.emptyList();
-						source = null;
 						break;
 					case RBT:
 						buyValues = new ArrayList<>();
@@ -532,7 +531,16 @@ public class StockManager {
 		 * @return
 		 */
 		public static TradeWrapper modification(MonetaryAmount amount) {
-			return tradeType(TradeType.MODIFICATION).amount(amount).build();
+			return modification(amount, null);
+		}
+
+		/**
+		 * @param amount. Can be negative or positive
+		 * @param source
+		 * @return
+		 */
+		public static TradeWrapper modification(MonetaryAmount amount, Object source) {
+			return tradeType(TradeType.MODIFICATION).amount(amount).source(source).build();
 		}
 
 		public static TradeWrapper reimbursement(BigDecimal quantity, Object source) {
