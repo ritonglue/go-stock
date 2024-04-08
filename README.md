@@ -30,12 +30,12 @@ Rouding is taken into account. For example, you can buy 3 items at 100.00 euros 
 <dependency>
   <groupId>io.github.ritonglue</groupId>
   <artifactId>go-stock</artifactId>
-  <version>2.1.3</version>
+  <version>2.1.5</version>
 </dependency>
 ````
 
 ## TradeWrapper
-This class stores an amount and a quantity. It's possible to provide the source of the information. The source is useful in a closed position. The getBuy method gives you the buy source and the getSell method gives you the sell source.
+This class stores an amount and a quantity. It's possible to provide the source of the information.
 
 
 ## Example
@@ -225,20 +225,30 @@ In PRMP mode, all buy values are mixed together and sold at the same price.
 ```
 
 ## Modification
-Just add a positive or negative amount to modify the amount of the stock. The quantity is unchanged. In case of multiple opened position :
+Just add a positive or negative amount to modify the amount of the stock. The quantity is unchanged. It's possible to pass a source of modification. In case of multiple opened position :
  - a reduction amount is spread prorata the amounts and a StockAmountReductionException is thrown if the reduction exceeds the amount in stock.
  - an increased amount is spread prorata the quantities.
 
 
 ``` java
+		Object source;
 		stock = manager.getStock();
 		BigDecimal oldQuantity = stock.getQuantity();
 		MonetaryAmount oldAmount = stock.getAmount();
 		MonetaryAmount delta = oldAmount.multiply(2);
-		manager.add(TradeWrapper.modification(delta));
+		manager.add(TradeWrapper.modification(delta, source));
 		stock = manager.getStock();
 		Assert.assertEquals(oldQuantity, stock.getQuantity());
 		Assert.assertEquals(oldAmount.add(delta), stock.getAmount());
+		List<Modification> modifications = manager.getModifications();
+
+		Assert.assertEquals(1, modifications.size());
+		Modification modification = modifications.get(0);
+		Assert.assertEquals(source, modification.getModification().getSource());
+		Assert.assertEquals(delta, modification.getModification().getAmount());
+		Assert.assertTrue(oldQuantity.compareTo(modification.getQuantity()) == 0);
+		Assert.assertEquals(oldAmount, modification.getAmountBefore());
+		Assert.assertEquals(oldAmount.add(delta), modification.getAmountAfter());
 ```
 
 ## Reimbursement
@@ -255,7 +265,7 @@ A reimbursement will close all opened positions. After that the stock is empty (
 ```
 
 ## Force values
-It's possible to force some modifications
+It's possible to force some operations.
 ### Force sell
 For example : you buy 3 units at 100.00 and you sell them one by one. By default the reduction amount sequence is 33.33, 33.34, 33.33. It's possible to force the first values
 
