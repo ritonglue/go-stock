@@ -14,7 +14,7 @@ import org.junit.Test;
 
 import io.github.ritonglue.gostock.StockManager.TradeWrapper;
 
-public class FreeStockLIFO {
+public class FreeStockFIFOTest {
 	private final CurrencyUnit cu = Monetary.getCurrency("EUR");
 
 	private MonetaryAmount createMoney(String value) {
@@ -41,7 +41,7 @@ public class FreeStockLIFO {
 	}
 
 	private static StockManager newStockManager() {
-		return new StockManager(Mode.LIFO);
+		return new StockManager(Mode.FIFO);
 	}
 
 	@Test

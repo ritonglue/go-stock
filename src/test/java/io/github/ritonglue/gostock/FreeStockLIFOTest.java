@@ -14,7 +14,7 @@ import org.junit.Test;
 
 import io.github.ritonglue.gostock.StockManager.TradeWrapper;
 
-public class FreeStockPRMP {
+public class FreeStockLIFOTest {
 	private final CurrencyUnit cu = Monetary.getCurrency("EUR");
 
 	private MonetaryAmount createMoney(String value) {
@@ -41,7 +41,7 @@ public class FreeStockPRMP {
 	}
 
 	private static StockManager newStockManager() {
-		return new StockManager(Mode.PRMP);
+		return new StockManager(Mode.LIFO);
 	}
 
 	@Test

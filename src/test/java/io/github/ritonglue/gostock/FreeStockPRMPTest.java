@@ -14,7 +14,7 @@ import org.junit.Test;
 
 import io.github.ritonglue.gostock.StockManager.TradeWrapper;
 
-public class FreeStockFIFO {
+public class FreeStockPRMPTest {
 	private final CurrencyUnit cu = Monetary.getCurrency("EUR");
 
 	private MonetaryAmount createMoney(String value) {
@@ -41,7 +41,7 @@ public class FreeStockFIFO {
 	}
 
 	private static StockManager newStockManager() {
-		return new StockManager(Mode.FIFO);
+		return new StockManager(Mode.PRMP);
 	}
 
 	@Test
@@ -64,12 +64,10 @@ public class FreeStockFIFO {
 		Assert.assertEquals(1, closedPositions.size());
 		Position position = openedPositions.get(0);
 		Assert.assertEquals(createQuantity(1), position.getQuantity());
-		Assert.assertEquals(a, position.getBuy());
 
 		position = closedPositions.get(0);
 		Assert.assertEquals(createQuantity(2), position.getQuantity());
 		Assert.assertEquals(createMoney(0), position.getAmount());
-		Assert.assertEquals(a, position.getBuy());
 		Assert.assertEquals(b, position.getSell());
 	}
 }
