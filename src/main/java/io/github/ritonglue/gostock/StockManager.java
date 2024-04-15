@@ -32,6 +32,8 @@ public class StockManager {
 	private final Strategy strategy;
 	private final MonetaryAmountFactory<?> factory = Monetary.getDefaultAmountFactory();
 	private final List<Position> closedPositions = new ArrayList<>();
+	private final Map<Object, List<Position>> mapClosedPositionsBySell = new HashMap<>();
+	private final Map<Object, List<Position>> mapClosedPositionsByBuy = new HashMap<>();
 	private final List<TradeWrapper> orphanSells = new ArrayList<>();
 	private final List<Modification> modifications = new ArrayList<>();
 	public List<Modification> getModifications() {
@@ -403,7 +405,7 @@ public class StockManager {
 			sell.setAmount(sell.getAmount().add(stockAmount));
 			sell.setQuantity(sellQuantity.subtract(stockQuantity));
 			Position position = new Position(buySource, sellSource, stockQuantity, stockAmount, closeCause);
-			closedPositions.add(position);
+			this.addClosedPosition(position);
 			strategy.remove();
 			if(nsign < 0) {
 				sell(sell);
@@ -432,7 +434,7 @@ public class StockManager {
 			sell.setAmount(sell.getAmount().add(m));
 			sell.setQuantity(BigDecimal.ZERO);
 			Position position = new Position(buySource, sellSource, sellQuantity, m, closeCause);
-			closedPositions.add(position);
+			this.addClosedPosition(position);
 		}
 		sell.addBuyValues(buy);
 	}
@@ -612,5 +614,33 @@ public class StockManager {
 
 	public List<TradeWrapper> getOrphanSells() {
 		return orphanSells;
+	}
+
+	private void addClosedPosition(Position position) {
+		if(position == null) return;
+		closedPositions.add(position);
+		Object sell = position.getSell();
+		if(sell == null) return;
+		Object buy = position.getBuy();
+		this.mapClosedPositionsBySell.computeIfAbsent(sell, o -> new ArrayList<>()).add(position);
+		this.mapClosedPositionsByBuy.computeIfAbsent(buy, o -> new ArrayList<>()).add(position);
+	}
+
+	/**
+	 * @param buyValue a buy position
+	 * @return the list of closed positions attached to this buy position
+	 */
+	public List<Position> getClosedPositionsByBuy(Object buyValue) {
+		List<Position> list = this.mapClosedPositionsByBuy.get(buyValue);
+		return list == null ? Collections.emptyList() : Collections.unmodifiableList(list);
+	}
+
+	/**
+	 * @param sellValue a sell position
+	 * @return the list of closed positions attached to this sell position
+	 */
+	public List<Position> getClosedPositionsBySell(Object sellValue) {
+		List<Position> list = this.mapClosedPositionsBySell.get(sellValue);
+		return list == null ? Collections.emptyList() : Collections.unmodifiableList(list);
 	}
 }
