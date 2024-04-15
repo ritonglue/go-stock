@@ -6,7 +6,7 @@
 
   <groupId>io.github.ritonglue</groupId>
   <artifactId>go-stock</artifactId>
-  <version>2.1.6-SNAPSHOT</version>
+  <version>2.1.6</version>
   <packaging>jar</packaging>
   <description>The go-stock library enables stock management.</description>
 
