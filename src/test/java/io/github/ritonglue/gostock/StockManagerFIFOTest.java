@@ -1503,4 +1503,43 @@ public class StockManagerFIFOTest {
 		List<TradeWrapper> orphanSells = manager.getOrphanSells();
 		Assert.assertTrue(orphanSells.isEmpty());
 	}
+
+	@Test
+	public void testDecimal() {
+		int id = 1;
+		List<TradeWrapper> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		SourceTest b = new SourceTest(id++);
+		SourceTest c = new SourceTest(id++);
+		SourceTest d = new SourceTest(id++);
+		SourceTest e = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity("1.2"), createMoney(98), a));
+		list.add(TradeWrapper.buy(createQuantity("0.45"), createMoney(40), b));
+		list.add(TradeWrapper.buy(createQuantity("0.35"), createMoney(20), c));
+		list.add(TradeWrapper.sell(createQuantity(1), d));
+		list.add(TradeWrapper.sell(createQuantity(1), e));
+		StockManager manager = newStockManager();
+		manager.process(list);
+		TradeWrapper stock = manager.getStock();
+		Assert.assertTrue(stock.getQuantity().signum() == 0);
+
+		List<Position> closedPositions = manager.getClosedPositionsBySell(d);
+		Assert.assertEquals(1, closedPositions.size());
+		Position position = closedPositions.get(0);
+		Assert.assertEquals(createMoney("81.67"), position.getAmount());
+		Assert.assertTrue(position.getQuantity().compareTo(BigDecimal.ONE) == 0);
+
+		closedPositions = manager.getClosedPositionsBySell(e);
+		Assert.assertEquals(3, closedPositions.size());
+		Map<SourceTest, Position> map = closedPositions.stream().collect(Collectors.toMap(o -> o.getBuy(SourceTest.class), Function.identity()));
+		position = map.get(a);
+		Assert.assertEquals(createMoney("16.33"), position.getAmount());
+		Assert.assertTrue(position.getQuantity().compareTo(createQuantity("0.2")) == 0);
+		position = map.get(b);
+		Assert.assertEquals(createMoney(40), position.getAmount());
+		Assert.assertTrue(position.getQuantity().compareTo(createQuantity("0.45")) == 0);
+		position = map.get(c);
+		Assert.assertEquals(createMoney(20), position.getAmount());
+		Assert.assertTrue(position.getQuantity().compareTo(createQuantity("0.35")) == 0);
+	}
 }
