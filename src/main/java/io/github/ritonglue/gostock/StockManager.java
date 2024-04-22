@@ -2,6 +2,7 @@ package io.github.ritonglue.gostock;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -182,6 +183,9 @@ public class StockManager {
 		case RBT:
 			reimbursement(trade);
 			break;
+		case MODIFICATION_QUANTITY:
+			modificationQuantity(trade);
+			break;
 		}
 	}
 
@@ -230,6 +234,53 @@ public class StockManager {
 			}
 		}
 		modification(t, list);
+	}
+
+	private void modificationQuantity(TradeWrapper t) {
+		if(t.getTradeType() != TradeType.MODIFICATION_QUANTITY) return;
+		Strategy strategy = this.getStrategy();
+		Iterator<TradeWrapper> iter = strategy.iterator();
+		List<TradeWrapper> list = null;
+		if(strategy.size() == 1) {
+			//easy case
+			list = List.of(iter.next());
+		} else {
+			list = new ArrayList<>();
+			while(iter.hasNext()) {
+				list.add(iter.next());
+			}
+		}
+		modificationQuantity(t, list);
+	}
+
+	/**
+	 * apply modification quantity t to list of buy values
+	 * @param t
+	 * @param buys
+	 */
+	private void modificationQuantity(TradeWrapper t, List<TradeWrapper> buys) {
+		if(buys.isEmpty()) return;
+		BigDecimal quantityBefore = t.getQuantityBefore();
+		BigDecimal quantityAfter = t.getQuantityAfter();
+		if(BigDecimal.ONE.compareTo(quantityBefore) == 0) {
+			for(TradeWrapper b : buys) {
+				b.setQuantity(b.getQuantity().multiply(quantityAfter));
+			}
+		} else {
+			int scale = t.getScale();
+			RoundingMode roundingMode = t.getRoundingMode();
+			BigDecimal totalQuantity = buys.stream().map(TradeWrapper::getQuantity).reduce(BigDecimal.ZERO, BigDecimal::add);
+			totalQuantity = totalQuantity.multiply(quantityAfter).divide(quantityBefore, scale, roundingMode);
+			TradeWrapper first = buys.get(0);
+			for(int i = 1, n = buys.size() ; i < n ; ++i) {
+				TradeWrapper a = buys.get(i);
+				BigDecimal quantity = a.getQuantity();
+				quantity = quantity.multiply(quantityAfter).divide(quantityBefore, scale, roundingMode);
+				a.setQuantity(quantity);
+				totalQuantity = totalQuantity.subtract(quantity);
+			}
+			first.setQuantity(totalQuantity);
+		}
 	}
 
 	/**
@@ -442,6 +493,11 @@ public class StockManager {
 	public static class TradeWrapper implements Serializable {
 		private static final long serialVersionUID = 1L;
 
+		private final RoundingMode roundingMode = RoundingMode.HALF_UP;
+		private int scale;
+		private BigDecimal quantityBefore;
+		private BigDecimal quantityAfter;
+
 		private BigDecimal quantity;
 		private MonetaryAmount amount;
 		private final TradeType tradeType;
@@ -449,10 +505,22 @@ public class StockManager {
 		private final List<TradeWrapper> buyValues;
 		
 		public static class Builder {
+			private int scale;
+			private BigDecimal quantityBefore;
+			private BigDecimal quantityAfter;
 			private BigDecimal quantity;
 			private MonetaryAmount amount;
 			private TradeType tradeType;
 			private Object source;
+
+			public Builder scale(int scale) {this.scale = scale; return this;}
+			public Builder quantityAfter(String quantity) {return quantityAfter(new BigDecimal(quantity));}
+			public Builder quantityAfter(long quantity) {return quantityAfter(new BigDecimal(quantity));}
+			public Builder quantityAfter(BigDecimal quantity) {this.quantityAfter = quantity; return this;}
+
+			public Builder quantityBefore(String quantity) {return quantityBefore(new BigDecimal(quantity));}
+			public Builder quantityBefore(long quantity) {return quantityBefore(new BigDecimal(quantity));}
+			public Builder quantityBefore(BigDecimal quantity) {this.quantityBefore = quantity; return this;}
 
 			public Builder quantity(String quantity) {return quantity(new BigDecimal(quantity));}
 			public Builder quantity(long quantity) {return quantity(new BigDecimal(quantity));}
@@ -483,6 +551,7 @@ public class StockManager {
 						amount = null;
 						break;
 					case MODIFICATION:
+					case MODIFICATION_QUANTITY:
 						buyValues = Collections.emptyList();
 						break;
 					case RBT:
@@ -493,7 +562,7 @@ public class StockManager {
 						amount = null;
 						break;
 				}
-				return new TradeWrapper(quantity, amount, tradeType, source, buyValues);
+				return new TradeWrapper(scale, quantityBefore, quantityAfter, quantity, amount, tradeType, source, buyValues);
 			}
 		}
 
@@ -501,14 +570,26 @@ public class StockManager {
 			return new Builder().tradeType(tradeType);
 		}
 
-		private TradeWrapper(BigDecimal quantity, MonetaryAmount amount, TradeType tradeType, Object source, List<TradeWrapper> buyValues) {
+		private TradeWrapper(
+			  int scale
+			, BigDecimal quantityBefore
+			, BigDecimal quantityAfter
+			, BigDecimal quantity
+			, MonetaryAmount amount, TradeType tradeType, Object source, List<TradeWrapper> buyValues) {
+			this.scale = scale;
+			this.quantityAfter = quantityAfter;
+			this.quantityBefore = quantityBefore;
 			this.quantity = quantity;
 			this.amount = amount;
 			this.tradeType = tradeType;
 			this.source = source;
 			this.buyValues = buyValues;
 		}
-		
+
+		public static TradeWrapper modifyQuantity(BigDecimal quantityBefore, BigDecimal quantityAfter, int scale, Object source) {
+			return tradeType(TradeType.MODIFICATION_QUANTITY).scale(scale).quantityBefore(quantityBefore).quantityAfter(quantityAfter).source(source).build();
+		}
+
 		public static TradeWrapper buy(BigDecimal quantity, MonetaryAmount amount, Object source) {
 			return tradeType(TradeType.BUY).amount(amount).quantity(quantity).source(source).build();
 		}
@@ -593,6 +674,34 @@ public class StockManager {
 		
 		public void addBuyValues(TradeWrapper t) {
 			this.buyValues.add(t);
+		}
+
+		public int getScale() {
+			return scale;
+		}
+
+		public void setScale(int scale) {
+			this.scale = scale;
+		}
+
+		public BigDecimal getQuantityBefore() {
+			return quantityBefore;
+		}
+
+		public void setQuantityBefore(BigDecimal quantityBefore) {
+			this.quantityBefore = quantityBefore;
+		}
+
+		public BigDecimal getQuantityAfter() {
+			return quantityAfter;
+		}
+
+		public void setQuantityAfter(BigDecimal quantityAfter) {
+			this.quantityAfter = quantityAfter;
+		}
+
+		public RoundingMode getRoundingMode() {
+			return roundingMode;
 		}
 	}
 	
