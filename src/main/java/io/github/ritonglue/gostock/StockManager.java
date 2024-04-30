@@ -222,23 +222,17 @@ public class StockManager {
 
 	private void modification(TradeWrapper t) {
 		if(t.getTradeType() != TradeType.MODIFICATION) return;
-		Strategy strategy = this.getStrategy();
-		Iterator<TradeWrapper> iter = strategy.iterator();
-		List<TradeWrapper> list = null;
-		if(strategy.size() == 1) {
-			//easy case
-			list = List.of(iter.next());
-		} else {
-			list = new ArrayList<>();
-			while(iter.hasNext()) {
-				list.add(iter.next());
-			}
-		}
+		List<TradeWrapper> list = buildListTradeWrappers();
 		modification(t, list);
 	}
 
 	private void modificationQuantity(TradeWrapper t) {
 		if(t.getTradeType() != TradeType.MODIFICATION_QUANTITY) return;
+		List<TradeWrapper> list = buildListTradeWrappers();
+		modificationQuantity(t, list);
+	}
+
+	private List<TradeWrapper> buildListTradeWrappers() {
 		Strategy strategy = this.getStrategy();
 		Iterator<TradeWrapper> iter = strategy.iterator();
 		List<TradeWrapper> list = null;
@@ -251,7 +245,7 @@ public class StockManager {
 				list.add(iter.next());
 			}
 		}
-		modificationQuantity(t, list);
+		return list;
 	}
 
 	/**
