@@ -18,6 +18,7 @@ import javax.money.MonetaryAmount;
 import javax.money.MonetaryAmountFactory;
 import javax.money.MonetaryRounding;
 
+import io.github.ritonglue.gostock.exception.EmptyPositionModificationException;
 import io.github.ritonglue.gostock.exception.StockAmountReductionException;
 import io.github.ritonglue.gostock.strategy.FIFOStrategy;
 import io.github.ritonglue.gostock.strategy.LIFOStrategy;
@@ -331,6 +332,9 @@ public class StockManager {
 					return;
 				}
 				iter = buys.iterator();
+			}
+			if(!iter.hasNext()) {
+				throw new EmptyPositionModificationException();
 			}
 			TradeWrapper buy = iter.next();
 			int sign = modificationAmount.signum();
