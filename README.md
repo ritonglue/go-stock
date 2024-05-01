@@ -30,7 +30,7 @@ Rouding is taken into account. For example, you can buy 3 items at 100.00 euros 
 <dependency>
   <groupId>io.github.ritonglue</groupId>
   <artifactId>go-stock</artifactId>
-  <version>2.1.8</version>
+  <version>2.1.9</version>
 </dependency>
 ````
 
