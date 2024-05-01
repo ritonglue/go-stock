@@ -288,4 +288,18 @@ public class ModificationFIFOTest {
 		StockManager manager = newStockManager();
 		manager.process(list);
 	}
+
+	@Test(expected = StockAmountReductionException.class)
+	public void testReductionException3ByQuantity() {
+		int id = 1;
+		List<TradeWrapper> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney("10"), a));
+		SourceTest b = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity(2), createMoney("16"), b));
+		SourceTest d = new SourceTest(id++);
+		list.add(TradeWrapper.modification(createMoney("-20000"), ModificationMode.QUANTITY, d));
+		StockManager manager = newStockManager();
+		manager.process(list);
+	}
 }
