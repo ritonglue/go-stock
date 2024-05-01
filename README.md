@@ -30,7 +30,7 @@ Rouding is taken into account. For example, you can buy 3 items at 100.00 euros 
 <dependency>
   <groupId>io.github.ritonglue</groupId>
   <artifactId>go-stock</artifactId>
-  <version>2.1.5</version>
+  <version>2.1.8</version>
 </dependency>
 ````
 
@@ -229,10 +229,11 @@ Just add a positive or negative amount to modify the amount of the stock. The qu
  In case of multiple opened position you can use different modes :
  - by quantity
  - by amount of money
- - mixed mode :
+ - mixed mode (default mode):
     - a reduction amount is spread prorata the amounts and a StockAmountReductionException is thrown if the reduction exceeds the amount in stock.
     - an increased amount is spread prorata the quantities.
 
+By default mixed mode is applied. You can change the modification mode at StockManager level or override it at TradeWrapper level.
 
 ``` java
 		Object source;
