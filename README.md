@@ -225,9 +225,13 @@ In PRMP mode, all buy values are mixed together and sold at the same price.
 ```
 
 ## Modification
-Just add a positive or negative amount to modify the amount of the stock. The quantity is unchanged. It's possible to pass a source of modification. In case of multiple opened position :
- - a reduction amount is spread prorata the amounts and a StockAmountReductionException is thrown if the reduction exceeds the amount in stock.
- - an increased amount is spread prorata the quantities.
+Just add a positive or negative amount to modify the amount of the stock. The quantity is unchanged. It's possible to pass a source of modification.
+ In case of multiple opened position you can use different modes :
+ - by quantity
+ - by amount of money
+ - mixed mode :
+    - a reduction amount is spread prorata the amounts and a StockAmountReductionException is thrown if the reduction exceeds the amount in stock.
+    - an increased amount is spread prorata the quantities.
 
 
 ``` java
