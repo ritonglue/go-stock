@@ -2,7 +2,6 @@ package io.github.ritonglue.gostock;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -17,6 +16,7 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import io.github.ritonglue.gostock.StockManager.TradeWrapper;
+import io.github.ritonglue.gostock.exception.StockAmountReductionException;
 
 public class ModificationFIFOTest {
 	private final CurrencyUnit cu = Monetary.getCurrency("EUR");
@@ -247,5 +247,45 @@ public class ModificationFIFOTest {
 		Assert.assertEquals(createMoney("1200"), position.getAmount());
 		position = openedPositions.get(c);
 		Assert.assertEquals(createMoney("2100"), position.getAmount());
+	}
+
+	@Test(expected = StockAmountReductionException.class)
+	public void testReductionException1() {
+		int id = 1;
+		List<TradeWrapper> list = new ArrayList<>();
+		SourceTest b = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity(2), createMoney("16"), b));
+		SourceTest d = new SourceTest(id++);
+		list.add(TradeWrapper.modification(createMoney("-20"), ModificationMode.QUANTITY, d));
+		StockManager manager = newStockManager();
+		manager.process(list);
+	}
+
+	@Test(expected = StockAmountReductionException.class)
+	public void testReductionException2ByQuantity() {
+		int id = 1;
+		List<TradeWrapper> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney("10"), a));
+		SourceTest b = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity(2), createMoney("16"), b));
+		SourceTest d = new SourceTest(id++);
+		list.add(TradeWrapper.modification(createMoney("-28"), ModificationMode.QUANTITY, d));
+		StockManager manager = newStockManager();
+		manager.process(list);
+	}
+
+	@Test(expected = StockAmountReductionException.class)
+	public void testReductionException2ByMoney() {
+		int id = 1;
+		List<TradeWrapper> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney("10"), a));
+		SourceTest b = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity(2), createMoney("16"), b));
+		SourceTest d = new SourceTest(id++);
+		list.add(TradeWrapper.modification(createMoney("-28"), ModificationMode.MONEY, d));
+		StockManager manager = newStockManager();
+		manager.process(list);
 	}
 }
