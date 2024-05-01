@@ -226,9 +226,27 @@ public class StockManager {
 		}
 	}
 
+	/**
+	 * check if you can apply the reduction modificationAmount
+	 * @param modificationAmount
+	 */
+	private void checkModifications(MonetaryAmount modificationAmount) {
+		if(modificationAmount.isPositiveOrZero()) return;
+		if(this.isEmpty()) {
+			throw new EmptyPositionModificationException();
+		}
+		TradeWrapper stock = getStock();
+		MonetaryAmount amount = stock.getAmount();
+		MonetaryAmount diff = amount.add(modificationAmount);
+		if(diff.isNegative()) {
+			throw new StockAmountReductionException(amount, modificationAmount);
+		}
+	}
+
 	private void modification(TradeWrapper t) {
 		if(t.getTradeType() != TradeType.MODIFICATION) return;
 		List<TradeWrapper> list = buildListTradeWrappers();
+		checkModifications(t.getAmount());
 		modification(t, list);
 	}
 
