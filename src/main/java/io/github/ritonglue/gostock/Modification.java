@@ -36,14 +36,6 @@ public class Modification implements Serializable {
 		return modification;
 	}
 
-	public <T> T getBuy(Class<T> clazz) {
-		return clazz.cast(buy);
-	}
-
-	public <T> T getModification(Class<T> clazz) {
-		return clazz.cast(modification);
-	}
-
 	public MonetaryAmount getAmountBefore() {
 		return amountBefore;
 	}
