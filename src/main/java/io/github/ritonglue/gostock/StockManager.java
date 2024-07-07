@@ -375,6 +375,7 @@ public class StockManager {
 				switch(modificationMode) {
 				case MIXED:
 				case QUANTITY:
+				case QUANTITY_FIRST:
 					modificationByQuantity(t, buys, modificationAmount);
 					break;
 				case MONEY:
@@ -389,6 +390,13 @@ public class StockManager {
 					break;
 				case QUANTITY:
 					modificationByQuantity(t, buys, modificationAmount);
+					break;
+				case QUANTITY_FIRST:
+					try {
+						modificationByQuantity(t, buys, modificationAmount);
+					} catch(StockAmountReductionException s) {
+						modificationByAmount(t, buys, modificationAmount);
+					}
 					break;
 				}
 			}
@@ -406,6 +414,10 @@ public class StockManager {
 				BigDecimal quantity = u.getQuantity();
 				MonetaryAmount diff = amount.add(modificationUnit.multiply(quantity));
 				if(diff.isNegative()) {
+					if(getModificationMode(t) == ModificationMode.QUANTITY_FIRST) {
+						//rollback to modificationAmount
+						throw new StockAmountReductionException(amount, modificationAmount);
+					}
 					//force zero amount;
 					u.setAmount(amount.subtract(amount));
 					modificationAmount = modificationAmount.add(amount);
