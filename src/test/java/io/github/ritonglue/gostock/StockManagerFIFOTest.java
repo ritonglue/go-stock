@@ -1354,6 +1354,38 @@ public class StockManagerFIFOTest {
 	}
 
 	@Test
+	public void testMultiReductionQuantityFirst() {
+		int id = 1;
+		List<TradeWrapper> list = new ArrayList<>();
+		SourceTest a = new SourceTest(id++);
+		SourceTest b = new SourceTest(id++);
+		SourceTest c = new SourceTest(id++);
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(30), a));
+		list.add(TradeWrapper.buy(createQuantity(4), createMoney(20), b));
+		list.add(TradeWrapper.buy(createQuantity(3), createMoney(0), c));
+		list.add(TradeWrapper.modification(createMoney(-40)));
+		StockManager manager = StockManager.create(Mode.FIFO).modificationMode(ModificationMode.QUANTITY_FIRST).build();
+		manager.process(list);
+		TradeWrapper stock = manager.getStock();
+		Assert.assertEquals(createMoney(10), stock.getAmount());
+
+		List<Position> openedPositions = manager.getOpenedPositions();
+		Assert.assertEquals(3, openedPositions.size());
+
+		Position position = openedPositions.get(0);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney(6), position.getAmount());
+
+		position = openedPositions.get(1);
+		Assert.assertEquals(createQuantity(4), position.getQuantity());
+		Assert.assertEquals(createMoney(4), position.getAmount());
+
+		position = openedPositions.get(2);
+		Assert.assertEquals(createQuantity(3), position.getQuantity());
+		Assert.assertEquals(createMoney(0), position.getAmount());
+	}
+
+	@Test
 	public void testMultiRaise() {
 		int id = 1;
 		List<TradeWrapper> list = new ArrayList<>();
