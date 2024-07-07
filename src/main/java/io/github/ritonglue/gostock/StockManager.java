@@ -49,6 +49,24 @@ public class StockManager {
 	//key is a modification tradeWrapper
 	private final Map<TradeWrapper, Map<TradeWrapper, MonetaryAmount>> mapModification = new HashMap<>();
 
+	public static class Builder {
+		private Mode mode;
+		private ModificationMode modificationMode;
+		private MonetaryRounding rounding;
+
+		public Builder mode(Mode mode) {this.mode = mode; return this;}
+		public Builder modificationMode(ModificationMode modificationMode) {this.modificationMode = modificationMode; return this;}
+		public Builder rouding(MonetaryRounding rounding) {this.rounding = rounding; return this;}
+
+		public StockManager build() {
+			return new StockManager(mode, rounding, modificationMode);
+		}
+	}
+
+	public static Builder create(Mode mode) {
+		return new Builder().mode(mode);
+	}
+
 	private static class BuySellKey {
 		private final TradeWrapper buy;
 		private final TradeWrapper sell;
