@@ -7,5 +7,6 @@ package io.github.ritonglue.gostock;
 public enum ModificationMode {
 	  QUANTITY //by quantity
 	, MONEY //by monetary amount
-	, MIXED;//reduction : by moneraty amount. augmentation : by quantity
+	, MIXED//reduction : by monetary amount. augmentation : by quantity
+	, QUANTITY_FIRST//reduction : by quantity first. If it fails, reduction by by monetary amount
 }
